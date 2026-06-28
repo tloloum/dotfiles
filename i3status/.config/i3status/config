@@ -1,0 +1,60 @@
+general {
+    colors = true
+    interval = 5
+    color_good = "#8ABEB7"
+    color_degraded = "#F0C674"
+    color_bad = "#A54242"
+}
+
+order += "disk /"
+order += "memory"
+order += "cpu_usage"
+order += "wireless _first_"
+order += "ethernet _first_"
+order += "volume master"
+order += "battery all"
+order += "tztime local"
+
+disk "/" {
+    format = "💾 %avail"
+}
+
+memory {
+    format = "RAM %used"
+    threshold_degraded = "1G"
+    format_degraded = "RAM < %available"
+}
+
+cpu_usage {
+    format = "CPU %usage"
+}
+
+wireless _first_ {
+    format_up = "W: (%quality at %essid) %ip"
+    format_down = "W: down"
+}
+
+ethernet _first_ {
+    format_up = "E: %ip"
+    format_down = "E: down"
+}
+
+volume master {
+    format = "VOL %volume"
+    format_muted = "VOL muted"
+    device = "default"
+    mixer = "Master"
+    mixer_idx = 0
+}
+
+battery all {
+    format = "%status %percentage %remaining"
+    status_chr = "⚡"
+    status_bat = "🔋"
+    status_full = "☻"
+    low_threshold = 15
+}
+
+tztime local {
+    format = "%Y-%m-%d %H:%M"
+}
