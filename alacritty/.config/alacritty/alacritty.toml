@@ -1,44 +1,25 @@
-# ~/dotfiles/alacritty/.config/alacritty/alacritty.toml
+import = ["~/.config/alacritty/themes/themes/catppuccin_mocha.toml"]
+
+[env]
+TERM="xterm-256color"
+
 
 [window]
-padding = { x = 8, y = 8 }
-opacity = 0.95              # légère transparence
-decorations = "none"        # pas de barre de titre (i3 la gère)
+padding = { x = 5, y = 5}
+opacity = 0.95              
+decorations = "None"        
 dynamic_title = true
 
 [font]
-normal = { family = "JetBrainsMono Nerd Font", style = "Regular" }
-bold   = { family = "JetBrainsMono Nerd Font", style = "Bold" }
-italic = { family = "JetBrainsMono Nerd Font", style = "Italic" }
-size = 11.0
+normal = { family = "Fanstasque Sans Mono", style = "Regular" }
+bold   = { family = "Fanstasque Sans Mono", style = "Bold" }
+italic = { family = "Fanstasque Sans Mono", style = "Italic" }
+size = 8
 
 [cursor]
-style = { shape = "Block", blinking = "On" }
+style = { shape = "Block", blinking = "Off" }
 
 [scrolling]
 history = 10000
 
-# Thème de couleurs (exemple type Tokyo Night)
-[colors.primary]
-background = "#1a1b26"
-foreground = "#c0caf5"
-
-[colors.normal]
-black   = "#15161e"
-red     = "#f7768e"
-green   = "#9ece6a"
-yellow  = "#e0af68"
-blue    = "#7aa2f7"
-magenta = "#bb9af7"
-cyan    = "#7dcfff"
-white   = "#a9b1d6"
-
-[colors.bright]
-black   = "#414868"
-red     = "#f7768e"
-green   = "#9ece6a"
-yellow  = "#e0af68"
-blue    = "#7aa2f7"
-magenta = "#bb9af7"
-cyan    = "#7dcfff"
-white   = "#c0caf5"
+option_as_alt = "Both"

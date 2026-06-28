@@ -6,6 +6,7 @@
 #
 
 exec --no-startup-id xinput set-prop "FTCS0038:00 2808:0101 Touchpad" "libinput Natural Scrolling Enabled" 1
+exec --no-startup-id xinput set-prop "FTCS0038:00 2808:0101 Touchpad" "libinput Scrolling Pixel Distance" 25
 
 # i3 config file (v4)
 #

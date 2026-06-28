@@ -1,0 +1,1 @@
+- *stwo* : lien symoblique depot dotifles avec dossier .config
