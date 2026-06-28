@@ -11,10 +11,31 @@ decorations = "None"
 dynamic_title = true
 
 [font]
-normal = { family = "Fanstasque Sans Mono", style = "Regular" }
-bold   = { family = "Fanstasque Sans Mono", style = "Bold" }
-italic = { family = "Fanstasque Sans Mono", style = "Italic" }
 size = 8
+
+[font.normal]
+family = "Fantasque Sans Mono"
+style  = "Regular"
+
+[font.bold]
+family = "Fantasque Sans Mono"
+style  = "Bold"
+
+[font.italic]
+family = "Fantasque Sans Mono"
+style  = "Italic"
+
+[font.bold_italic]
+family = "Fantasque Sans Mono"
+style  = "Bold Italic"
+
+[font.offset]
+x = 0
+y = 0
+
+[font.glyph_offset]
+x = 0
+y = 0
 
 [cursor]
 style = { shape = "Block", blinking = "Off" }
@@ -22,4 +43,3 @@ style = { shape = "Block", blinking = "Off" }
 [scrolling]
 history = 10000
 
-option_as_alt = "Both"
