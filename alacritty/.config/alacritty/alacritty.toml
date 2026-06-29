@@ -14,19 +14,19 @@ dynamic_title = true
 size = 8
 
 [font.normal]
-family = "Fantasque Sans Mono"
+family = "Maple Mono NF"
 style  = "Regular"
 
 [font.bold]
-family = "Fantasque Sans Mono"
+family = "Maple Mono NF"
 style  = "Bold"
 
 [font.italic]
-family = "Fantasque Sans Mono"
+family = "Maple Mono NF"
 style  = "Italic"
 
 [font.bold_italic]
-family = "Fantasque Sans Mono"
+family = "Victor Mono NF"
 style  = "Bold Italic"
 
 [font.offset]
