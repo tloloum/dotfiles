@@ -7,6 +7,16 @@ set $mod Mod4
 
 font pango:monospace 8
 
+gaps inner 1 
+#gaps outer 0
+smart_gaps on
+smart_borders on
+for_window [class=".*"] border pixel 2
+# class                 border  bg      text    indicator child_border
+client.focused          #F0C674 #F0C674 #282A2E #8ABEB7   #F0C674
+client.unfocused        #373B41 #373B41 #707880 #373B41   #373B41
+client.focused_inactive #373B41 #373B41 #C5C8C6 #373B41   #373B41
+
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
 #font pango:DejaVu Sans Mono 8
@@ -14,7 +24,7 @@ font pango:monospace 8
 # Start XDG autostart .desktop files using dex. See also
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex --autostart --environment i3
-
+exec_always --no-startup-id autotiling
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
 
@@ -183,7 +193,7 @@ bar {
     tray_output primary
     separator_symbol " | "
 
-    font pango:monospace 10
+    font pango:monospace 9 
 
     colors {
         background #282A2E
