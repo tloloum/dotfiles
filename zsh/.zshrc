@@ -1,4 +1,4 @@
-
+neofetch
 # power10k
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -11,7 +11,6 @@ zstyle ':omz:update' mode reminder  # just remind me to update when it's time
  zstyle ':omz:update' frequency 1
 
 ENABLE_CORRECTION="true"
-
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
 plugins=(
@@ -40,7 +39,10 @@ alias tree='eza --long --icons=auto --hyperlink --color=always --color-scale --c
 alias .config='cd ~/.config'
 alias config='cd ~/dotfiles'
 alias srczsh='source ~/.zshrc'
-
 alias home='cd ~'
 
-neofetch
+## PARAVIEW && TTK
+
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
+export PV_PLUGIN_PATH=${PV_PLUGIN_PATH}:/usr/local/bin/plugins/
+export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python3.12/site-packages/

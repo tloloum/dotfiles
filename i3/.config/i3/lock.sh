@@ -18,7 +18,7 @@ KEYHL='f3ace2ff'     # surbrillance a chaque touche (rose)
 BSHL='ffb270ff'      # surbrillance backspace (orange)
 TRANSPARENT='00000000'
 
-IMG="$HOME/Documents/img/wallpaper/big_tree.png"
+IMG="$HOME/visu/img/wallpaper/big_tree.png"
 
 i3lock \
   --nofork \
