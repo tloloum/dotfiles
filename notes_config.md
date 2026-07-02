@@ -1,3 +1,2 @@
 - *stwo* : lien symoblique depot dotifles avec dossier .config
-- *rofi* : GUI log off / shut down / ...
 
