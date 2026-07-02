@@ -1,0 +1,7 @@
+alias ls='eza --long --icons=auto --hyperlink --color=auto --color-scale --color-scale-mode=gradient --no-quotes -all --sort type --no-user --time-style '+%Y-%m-%d''
+alias tree='eza --long --icons=auto --hyperlink --color=always --color-scale --color-scale-mode=gradient --no-quotes -all --sort type --no-user --time-style '+%Y-%m-%d' --tree'
+alias .config='cd ~/.config'
+alias config='cd ~/dotfiles'
+alias srczsh='source ~/.zshrc'
+alias home='cd ~'
+alias create_swap='./.config/script/create_swapon.sh'

@@ -34,13 +34,7 @@ setopt hist_verify
 bindkey "^[[A" history-search-backward
 bindkey "^[[B" history-search-forward
 
-alias ls='eza --long --icons=auto --hyperlink --color=auto --color-scale --color-scale-mode=gradient --no-quotes -all --sort type --no-user --time-style '+%Y-%m-%d''
-alias tree='eza --long --icons=auto --hyperlink --color=always --color-scale --color-scale-mode=gradient --no-quotes -all --sort type --no-user --time-style '+%Y-%m-%d' --tree'
-alias .config='cd ~/.config'
-alias config='cd ~/dotfiles'
-alias srczsh='source ~/.zshrc'
-alias home='cd ~'
-
+source ~/.config/include_zsh/.alias_zsh
 ## PARAVIEW && TTK
 
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
