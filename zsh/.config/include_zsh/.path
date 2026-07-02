@@ -1,0 +1,7 @@
+
+
+
+## PARAVIEW && TTK
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
+export PV_PLUGIN_PATH=${PV_PLUGIN_PATH}:/usr/local/bin/plugins/
+export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python3.12/site-packages/
