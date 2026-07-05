@@ -1,4 +1,4 @@
-HISTFILE=$HOME/.zhistory
+HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history"
 SAVEHIST=1000
 HISTSIZE=999
 setopt share_history

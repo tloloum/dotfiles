@@ -116,7 +116,7 @@
 " If Vim version is equal to or greater than 7.3 enable undo file.
 " This allows you to undo changes to a file even after saving it.
 	if version >= 703
-    	set undodir=~/.vim/backup
+    	set undodir=$HOME/.local/state/vim/undo
     	set undofile
     	set undoreload=10000
 	endif
@@ -473,4 +473,4 @@ endfunction
 let g:loaded_matchparen = 1
 
 "------------------END_KEY------------------
-
+set viminfofile=$HOME/.local/state/vim/viminfo

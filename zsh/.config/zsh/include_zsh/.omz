@@ -13,6 +13,7 @@ ENABLE_CORRECTION="true"
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
 plugins=(
+	aliases
 	git
 	zsh-autosuggestions
 	zsh-syntax-highlighting
@@ -20,6 +21,6 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+[[ ! -f ${ZDOTDIR}/.p10k.zsh ]] || source ${ZDOTDIR}/.p10k.zsh
 
 
