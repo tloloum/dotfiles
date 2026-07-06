@@ -26,7 +26,7 @@ family = "Maple Mono NF"
 style  = "Italic"
 
 [font.bold_italic]
-family = "Victor Mono NF"
+family = ""Maple Mono NF
 style  = "Bold Italic"
 
 [font.offset]
