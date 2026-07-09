@@ -1,0 +1,49 @@
+# ── Intégration shell (Debian range les scripts dans /usr/share/doc/fzf) ──
+source /usr/share/doc/fzf/examples/key-bindings.zsh   # Ctrl-T, Ctrl-R, Alt-C
+source /usr/share/doc/fzf/examples/completion.zsh     # complétion **<Tab>
+
+# ── fd : sur Debian le binaire est « fdfind », on a un lien « fd » dans
+#    ~/.local/bin. Fallback sur fdfind si le lien n'existe pas (autre machine).
+if command -v fd >/dev/null; then
+  _FD=fd
+else
+  _FD=fdfind
+fi
+
+# ── Commande par défaut : lister les fichiers avec fd ──
+export FZF_DEFAULT_COMMAND="$_FD --type f --hidden --follow --exclude .git"
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND="$_FD --type d --hidden --follow --exclude .git"
+
+# ── Apparence + comportement globaux (thème Tokyo Night) ──
+export FZF_DEFAULT_OPTS="
+  --height=45%
+  --layout=reverse
+  --border=rounded
+  --info=inline
+  --prompt='❯ '
+  --pointer='▶'
+  --marker='✓'
+  --color=fg:#c0caf5,bg:-1,hl:#7aa2f7
+  --color=fg+:#ffffff,bg+:#283457,hl+:#7dcfff
+  --color=info:#7aa2f7,prompt:#9ece6a,pointer:#f7768e
+  --color=marker:#9ece6a,spinner:#bb9af7,header:#565f89
+  --color=border:#414868
+"
+
+# ── Aperçu pour Ctrl-T : bat si fichier, tree si dossier ──
+# (dans un --preview, les alias ne sont pas vus → on met batcat en dur)
+export FZF_CTRL_T_OPTS="
+  --preview 'batcat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || tree -C {} 2>/dev/null | head -200'
+  --preview-window 'right:60%:border-left'
+"
+
+# ── Aperçu pour Alt-C (dossiers) ──
+export FZF_ALT_C_OPTS="--preview 'tree -C {} 2>/dev/null | head -200'"
+
+# ── Ctrl-R : historique, aperçu de la commande complète sur « ? » ──
+export FZF_CTRL_R_OPTS="
+  --preview 'echo {}'
+  --preview-window 'down:3:hidden:wrap'
+  --bind '?:toggle-preview'
+"
