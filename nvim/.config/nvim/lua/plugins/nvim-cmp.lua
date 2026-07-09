@@ -2,6 +2,7 @@ return {
   "hrsh7th/nvim-cmp",
   event = { "InsertEnter", "CmdlineEnter" },
   dependencies = {
+    "hrsh7th/cmp-nvim-lsp", -- source pour la complétion via les serveurs LSP
     "hrsh7th/cmp-buffer", -- source pour compléter le texte déjà présent dans le buffer
     "hrsh7th/cmp-path", -- source pour compléter les chemins des fichiers
     "hrsh7th/cmp-cmdline", -- source pour les completions de la cmdline de vim
@@ -46,12 +47,12 @@ return {
         ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accepte la sélection courante. Mettre à `false` pour ne confirmer que les items explicitement sélectionnés
       },
 
-      -- sources pour l'autocompletion
+      -- sources pour l'autocompletion (ordre = priorité)
       sources = cmp.config.sources({
-        { name = "nvim_lua" },
+        { name = "nvim_lsp" }, -- complétion issue des serveurs LSP
         { name = "luasnip" }, -- snippets
         { name = "buffer" }, -- texte du buffer courant
-        { name = "path" }, -- chemins dy système de fichier
+        { name = "path" }, -- chemins du système de fichier
         { name = "emoji" }, -- emojis
       }),
 
@@ -62,11 +63,11 @@ return {
         fields = { "abbr", "kind", "menu" },
         format = lspkind.cmp_format({
           mode = "symbol_text",
-          -- On suffixe chaque entrée par son type
+          -- On suffixe chaque entrée par sa source
           menu = {
-            buffer = "[Buffer]",
+            nvim_lsp = "[LSP]",
             luasnip = "[LuaSnip]",
-            nvim_lua = "[Lua]",
+            buffer = "[Buffer]",
             path = "[Path]",
             emoji = "[Emoji]",
           },
@@ -96,7 +97,5 @@ return {
         },
       }),
     })
-
   end,
 }
-
