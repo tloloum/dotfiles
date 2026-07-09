@@ -1,3 +1,7 @@
+# NVIM 
+
+- **mason** -> manager LSP (programme local pour faire les goto et la complétion), sinon possible d'installer les lsp de chaque language avec apt
+
 # Edit text 
 
 - 'A' -> insert fin de ligne
