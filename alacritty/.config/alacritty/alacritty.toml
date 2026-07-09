@@ -1,4 +1,4 @@
-import = ["~/.config/alacritty/themes/themes/catppuccin_mocha.toml"]
+import = ["~/.config/alacritty/themes/themes/ganbaru_black.toml"]
 
 [env]
 TERM="alacritty"
@@ -6,7 +6,7 @@ TERM="alacritty"
 
 [window]
 padding = { x = 5, y = 5}
-opacity = 0.95              
+opacity = 0.60
 decorations = "None"        
 dynamic_title = true
 
