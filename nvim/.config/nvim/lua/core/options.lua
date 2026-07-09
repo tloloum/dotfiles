@@ -27,7 +27,7 @@ opt.splitbelow = true
 
 opt.swapfile = false
 
-opt.undofile true 
+opt.undofile = true 
 
 opt.list = true
 opt.listchars:append({ nbsp = "␣", trail = "•", precedes = "«", extends = "»", tab = "> " })
