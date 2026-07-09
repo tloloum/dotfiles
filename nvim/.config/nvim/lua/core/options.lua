@@ -5,7 +5,7 @@ opt.number = true
 
 opt.tabstop = 2
 opt.shiftwidth = 2
-opt.expandtab = true
+opt.expandtab = false 
 opt.autoindent = true
 
 opt.ignorecase = true
