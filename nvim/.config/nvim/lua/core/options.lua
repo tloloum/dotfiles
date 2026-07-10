@@ -30,4 +30,4 @@ opt.swapfile = false
 opt.undofile = true
 
 opt.list = true
-opt.listchars:append({ nbsp = "␣", trail = "•", precedes = "«", extends = "»" })
+opt.listchars:append({ tab = "  ", nbsp = "␣", trail = "•", precedes = "«", extends = "»" })
