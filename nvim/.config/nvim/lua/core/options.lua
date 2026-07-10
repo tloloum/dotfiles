@@ -5,7 +5,7 @@ opt.number = true
 
 opt.tabstop = 2
 opt.shiftwidth = 2
-opt.expandtab = false 
+opt.expandtab = false
 opt.autoindent = true
 
 opt.ignorecase = true
@@ -27,7 +27,7 @@ opt.splitbelow = true
 
 opt.swapfile = false
 
-opt.undofile = true 
+opt.undofile = true
 
 opt.list = true
-opt.listchars:append({ nbsp = "␣", trail = "•", precedes = "«", extends = "»", tab = "> " })
+opt.listchars:append({ nbsp = "␣", trail = "•", precedes = "«", extends = "»" })
