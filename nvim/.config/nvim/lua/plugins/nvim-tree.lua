@@ -17,7 +17,7 @@ return {
 			"n",
 			"<leader>e",
 			"<cmd>NvimTreeFindFileToggle<CR>",
-			{ desc = "Ouverture/fermeture de l'explorateur de fichiers" }
+			{ desc = "Tree" }
 		)
 	end,
 }
