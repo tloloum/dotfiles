@@ -33,7 +33,7 @@ warn() { printf '\033[1;33m!!\033[0m  %s\n' "$*" >&2; }
 # ── paquets système (apt) ────────────────────────────────────────────────────
 APT_PACKAGES=(
   # base
-  git stow curl zsh
+  git stow curl unzip zsh software-properties-common
   # éditeurs / gestionnaires de fichiers
   neovim vim ranger
   # environnement graphique i3
@@ -52,8 +52,34 @@ install_apt() {
     warn "apt-get introuvable : distribution non Debian/Ubuntu. Installe les paquets à la main : ${APT_PACKAGES[*]}"
     return
   fi
+
   log "Mise à jour des dépôts apt…"
   sudo apt-get update -qq
+
+  # Le neovim des dépôts Debian/Ubuntu/Mint est souvent trop vieux (0.9.x) pour
+  # la config (nvim-tree, tree-sitter-manager… exigent nvim >= 0.10), et le git
+  # des dépôts (2.43) est trop vieux pour `git --no-advice` (utilisé par
+  # tree-sitter-manager.nvim pour cloner les parsers, dispo depuis git 2.46).
+  # On passe par les PPA officiels pour avoir des versions récentes des deux.
+  command -v add-apt-repository >/dev/null || sudo apt-get install -y -qq software-properties-common
+  if command -v add-apt-repository >/dev/null; then
+    local need_update=0
+    if ! grep -rq "neovim-ppa/unstable" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+      log "Ajout du PPA neovim-ppa/unstable (nvim récent)…"
+      sudo add-apt-repository -y ppa:neovim-ppa/unstable \
+        && need_update=1 \
+        || warn "Impossible d'ajouter le PPA neovim — nvim risque d'être trop ancien."
+    fi
+    if ! grep -rq "git-core/ppa" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+      log "Ajout du PPA git-core/ppa (git récent)…"
+      sudo add-apt-repository -y ppa:git-core/ppa \
+        && need_update=1 \
+        || warn "Impossible d'ajouter le PPA git-core — git risque d'être trop ancien."
+    fi
+    [ "$need_update" -eq 1 ] && sudo apt-get update -qq
+  else
+    warn "add-apt-repository absent (paquet software-properties-common) — nvim/git viendront des dépôts par défaut, potentiellement trop anciens."
+  fi
 
   log "Installation des paquets…"
   # On installe paquet par paquet : 'eza' n'existe pas sur les vieilles distros,
@@ -115,6 +141,26 @@ setup_zsh_env() {
   fi
 }
 
+# ── police du terminal (Maple Mono NF, requise par alacritty.toml) ───────────
+install_font() {
+  local FONT_DIR="$HOME/.local/share/fonts/MapleMono"
+  if fc-list | grep -q "^.*: Maple Mono NF:"; then
+    log "Police Maple Mono NF déjà installée."
+    return
+  fi
+  log "Installation de la police Maple Mono NF…"
+  local TMP; TMP="$(mktemp -d)"
+  if curl -fsSL -o "$TMP/MapleMono-NF.zip" \
+      https://github.com/subframe7536/maple-font/releases/latest/download/MapleMono-NF.zip; then
+    mkdir -p "$FONT_DIR"
+    unzip -oq "$TMP/MapleMono-NF.zip" -d "$FONT_DIR"
+    fc-cache -f "$FONT_DIR" >/dev/null
+  else
+    warn "Téléchargement de la police Maple Mono NF échoué — installe-la à la main dans $FONT_DIR."
+  fi
+  rm -rf "$TMP"
+}
+
 # ── sous-modules git (thème alacritty) ───────────────────────────────────────
 init_submodules() {
   log "Initialisation des sous-modules git…"
@@ -158,6 +204,7 @@ if [ "$RESTOW_ONLY" -eq 1 ]; then
 fi
 
 [ "$DO_APT" -eq 1 ] && install_apt
+install_font
 init_submodules
 install_zsh_stack
 setup_zsh_env
