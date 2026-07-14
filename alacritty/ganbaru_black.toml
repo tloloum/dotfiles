@@ -1,0 +1,78 @@
+# Ganbaru black — variante de catppuccin_mocha (Ganbaru blue)
+# Mêmes couleurs de texte / ANSI, mais fond noir (pensé pour un fond transparent
+# via window.opacity dans alacritty.toml).
+
+[colors.primary]
+background        = '#000000'  # fond noir
+foreground        = '#d0dbde'  # texte principal
+dim_foreground    = '#888d94'  # texte attenue
+bright_foreground = '#d0dbde'  # texte vif
+
+# Curseur
+[colors.cursor]
+text   = '#000000'  # = fond
+cursor = '#f3ace2'  # rose (accent doux, equiv. rosewater)
+
+[colors.vi_mode_cursor]
+text   = '#000000'
+cursor = '#baa0f8'  # violet (equiv. lavender)
+
+# Recherche
+[colors.search.matches]
+foreground = '#000000'
+background = '#888d94'
+
+[colors.search.focused_match]
+foreground = '#000000'
+background = '#a2e57b'  # vert
+
+[colors.footer_bar]
+foreground = '#000000'
+background = '#888d94'
+
+# Hints regex clavier
+[colors.hints.start]
+foreground = '#000000'
+background = '#f3ace2'  # slot "yellow" (= rose ici)
+
+[colors.hints.end]
+foreground = '#000000'
+background = '#888d94'
+
+# Selection
+[colors.selection]
+text       = '#000000'
+background = '#f3ace2'  # rose
+
+# Couleurs normales
+[colors.normal]
+black   = '#505860'  # gris visible sur le fond
+red     = '#ff6d7e'
+green   = '#a2e57b'
+yellow  = '#f3ace2'  # rose
+blue    = '#ffb270'  # orange
+magenta = '#baa0f8'  # violet
+cyan    = '#7cd5f1'
+white   = '#b8c4c3'
+
+# Couleurs vives
+[colors.bright]
+black   = '#6b7678'
+red     = '#ff6d7e'
+green   = '#a2e57b'
+yellow  = '#f3ace2'
+blue    = '#ffb270'
+magenta = '#baa0f8'
+cyan    = '#7cd5f1'
+white   = '#d0dbde'
+
+# Couleurs attenuees
+[colors.dim]
+black   = '#41454b'
+red     = '#ff6d7e'
+green   = '#a2e57b'
+yellow  = '#f3ace2'
+blue    = '#ffb270'
+magenta = '#baa0f8'
+cyan    = '#7cd5f1'
+white   = '#888d94'
