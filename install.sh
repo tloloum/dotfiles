@@ -43,9 +43,8 @@ APT_PACKAGES=(
   alacritty neofetch fontconfig
   # outils CLI référencés par la config (fzf, bat, fd, eza, tree, ripgrep)
   fzf bat fd-find tree eza ripgrep
-  # runtime nvim : python3 (ranger), node/npm (copilot + serveurs LSP Mason),
-  #                cargo (pour compiler le CLI tree-sitter, cf. install_nvim_toolchain)
-  python3 nodejs npm cargo
+  # runtime nvim : python3 (ranger, LSP), node/npm (copilot + serveurs LSP Mason)
+  python3 python3-pip python3-venv nodejs npm
 )
 
 install_apt() {
@@ -138,6 +137,29 @@ install_fonts() {
   fc-cache -f >/dev/null 2>&1 || true
 }
 
+# ── terminfo alacritty ────────────────────────────────────────────────────────
+# alacritty.toml force TERM=alacritty, mais le paquet apt "alacritty" ne fournit
+# pas l'entrée terminfo correspondante sur Debian/Ubuntu/Mint : sans elle, zsh
+# (ZLE) et toute appli basée sur terminfo ne savent plus effacer/repositionner
+# le curseur (texte qui se dédouble en se redessinant, Ctrl+L cassé, etc.).
+install_alacritty_terminfo() {
+  if infocmp alacritty >/dev/null 2>&1; then
+    log "Terminfo alacritty déjà installée."
+    return
+  fi
+  log "Installation de la terminfo alacritty…"
+  local tmp; tmp=$(mktemp -d)
+  if curl -fsSL -o "$tmp/alacritty.info" \
+      https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info; then
+    mkdir -p "$HOME/.terminfo"
+    tic -xe alacritty,alacritty-direct -o "$HOME/.terminfo" "$tmp/alacritty.info" \
+      || warn "Échec de compilation de la terminfo alacritty (tic)."
+  else
+    warn "Téléchargement de la terminfo alacritty échoué — installe-la à la main."
+  fi
+  rm -rf "$tmp"
+}
+
 # ── oh-my-zsh + powerlevel10k + plugins ──────────────────────────────────────
 install_zsh_stack() {
   local ZSH_DIR="$HOME/.oh-my-zsh"
@@ -164,10 +186,13 @@ install_zsh_stack() {
 # ── toolchain treesitter pour nvim ───────────────────────────────────────────
 # La config nvim utilise tree-sitter-manager.nvim, qui shell-out vers le CLI
 # `tree-sitter build` (sous-commande ≥ 0.22). Le paquet apt est figé en 0.20.8 :
-# on installe le CLI récent via cargo. Le plugin utilise aussi `git --no-advice`
-# (git ≥ 2.44).  Cf. note mémoire nvim-treesitter-toolchain.
+# on récupère le binaire précompilé de la dernière release GitHub plutôt que de
+# compiler via cargo (rustc de l'apt "cargo" est trop vieux, et même en passant
+# par rustup, une dépendance annexe de tree-sitter-cli — rquickjs-sys — casse
+# sur le bindgen/clang de cette distro : autant éviter toute la toolchain Rust).
+# Le plugin utilise aussi `git --no-advice` (git ≥ 2.44).
 install_nvim_toolchain() {
-  # 1. git ≥ 2.44 — sur Ubuntu, le PPA git-core fournit une version récente.
+  # git ≥ 2.44 — sur Ubuntu, le PPA git-core fournit une version récente.
   local git_major git_minor
   git_major=$(git --version | grep -oE '[0-9]+' | sed -n 1p)
   git_minor=$(git --version | grep -oE '[0-9]+' | sed -n 2p)
@@ -181,28 +206,35 @@ install_nvim_toolchain() {
     fi
   fi
 
-  # 2. CLI tree-sitter ≥ 0.22 via cargo (installe dans ~/.cargo/bin).
-  if command -v cargo >/dev/null 2>&1; then
-    if ! "$HOME/.cargo/bin/tree-sitter" --version >/dev/null 2>&1 && ! command -v tree-sitter >/dev/null 2>&1; then
-      log "Installation du CLI tree-sitter via cargo (peut prendre quelques minutes)…"
-      cargo install tree-sitter-cli || warn "cargo install tree-sitter-cli a échoué."
-    else
-      log "CLI tree-sitter déjà présent."
-    fi
-  else
-    warn "cargo absent : impossible d'installer le CLI tree-sitter récent (treesitter cassera)."
+  # CLI tree-sitter ≥ 0.22 : binaire précompilé dans ~/.local/bin.
+  if command -v tree-sitter >/dev/null 2>&1; then
+    log "CLI tree-sitter déjà présent."
+    return
   fi
+  log "Installation du CLI tree-sitter (binaire précompilé)…"
+  mkdir -p "$HOME/.local/bin"
+  local tmp; tmp=$(mktemp -d)
+  if curl -fsSL -o "$tmp/tree-sitter.gz" \
+      https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-x64.gz \
+      && gunzip "$tmp/tree-sitter.gz" \
+      && chmod +x "$tmp/tree-sitter" \
+      && mv "$tmp/tree-sitter" "$HOME/.local/bin/tree-sitter"; then
+    :
+  else
+    warn "Échec installation du CLI tree-sitter — installe-le à la main dans ~/.local/bin."
+  fi
+  rm -rf "$tmp"
 }
 
 # ── réglages nécessaires au fonctionnement de la config zsh ───────────────────
 setup_zsh_env() {
   # La config zsh vit dans ~/.config/zsh et s'appuie sur $ZDOTDIR. zsh ne lit
   # ZDOTDIR que depuis ~/.zshenv (ou /etc/zsh/zshenv) : on le pose ici. On y
-  # ajoute aussi ~/.cargo/bin au PATH (pour trouver le CLI tree-sitter récent).
+  # ajoute aussi ~/.local/bin au PATH (fd/bat renommés, CLI tree-sitter…).
   local ZSHENV="$HOME/.zshenv"
   touch "$ZSHENV"
-  grep -qF 'ZDOTDIR' "$ZSHENV"   || { log "ZDOTDIR → ~/.zshenv"; printf '%s\n' 'export ZDOTDIR="$HOME/.config/zsh"' >> "$ZSHENV"; }
-  grep -qF '.cargo/bin' "$ZSHENV" || printf '%s\n' 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$ZSHENV"
+  grep -qF 'ZDOTDIR' "$ZSHENV"    || { log "ZDOTDIR → ~/.zshenv"; printf '%s\n' 'export ZDOTDIR="$HOME/.config/zsh"' >> "$ZSHENV"; }
+  grep -qF '.local/bin' "$ZSHENV" || printf '%s\n' 'export PATH="$HOME/.local/bin:$PATH"' >> "$ZSHENV"
 
   # Dossier de l'historique (HISTFILE=~/.local/state/zsh/history).
   mkdir -p "$HOME/.local/state/zsh"
@@ -259,6 +291,7 @@ fi
 if [ "$DO_APT" -eq 1 ]; then
   install_apt
   install_fonts
+  install_alacritty_terminfo
 fi
 init_submodules
 install_zsh_stack
