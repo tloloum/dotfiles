@@ -40,7 +40,11 @@ APT_PACKAGES=(
   i3 i3status i3lock picom feh network-manager-gnome
   pulseaudio-utils brightnessctl suckless-tools
   # terminal & fetch
+  # (le paquet alacritty est gardé pour son .desktop/ses icônes, mais
+  # install_alacritty_from_source() compile une version plus récente par-dessus
+  # — voir le commentaire de cette fonction)
   alacritty neofetch fontconfig
+  cmake pkg-config libfreetype-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev
   # outils CLI référencés par la config (fzf, bat, fd, eza, tree, ripgrep)
   fzf bat fd-find tree eza ripgrep
   # runtime nvim : python3 (ranger, LSP), node/npm (copilot + serveurs LSP Mason)
@@ -158,6 +162,47 @@ install_alacritty_terminfo() {
     warn "Téléchargement de la terminfo alacritty échoué — installe-la à la main."
   fi
   rm -rf "$tmp"
+}
+
+# ── alacritty compilé depuis les sources ─────────────────────────────────────
+# Le paquet apt "alacritty" traîne souvent plusieurs versions de retard et gère
+# mal le protocole clavier étendu (CSI u / Kitty keyboard protocol) : dans nvim,
+# Return finit par être interprété comme deux retours à la ligne d'un coup.
+# On compile la dernière release depuis les sources et on la place dans
+# ~/.local/bin (prioritaire dans le PATH), le paquet apt restant en place pour
+# son .desktop/ses icônes.
+install_alacritty_from_source() {
+  if ! command -v cargo >/dev/null 2>&1; then
+    log "Installation de rustup (requis pour compiler alacritty)…"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal \
+      || { warn "Échec installation rustup — alacritty restera en version apt."; return; }
+    # shellcheck source=/dev/null
+    source "$HOME/.cargo/env"
+  fi
+
+  local SRC_DIR="$HOME/.local/src/alacritty"
+  mkdir -p "$(dirname "$SRC_DIR")"
+  if [ -d "$SRC_DIR" ]; then
+    log "Mise à jour des sources alacritty…"
+    git -C "$SRC_DIR" fetch --tags -q
+  else
+    log "Clonage d'alacritty…"
+    git clone -q https://github.com/alacritty/alacritty.git "$SRC_DIR" \
+      || { warn "Échec clonage alacritty — version apt conservée."; return; }
+  fi
+
+  local latest_tag
+  latest_tag=$(git -C "$SRC_DIR" describe --tags "$(git -C "$SRC_DIR" rev-list --tags --max-count=1)")
+  git -C "$SRC_DIR" checkout -q "$latest_tag"
+
+  log "Compilation d'alacritty $latest_tag (peut prendre quelques minutes)…"
+  mkdir -p "$HOME/.local/bin"
+  if (cd "$SRC_DIR" && cargo build --release --no-default-features --features x11); then
+    cp "$SRC_DIR/target/release/alacritty" "$HOME/.local/bin/alacritty"
+    log "alacritty $latest_tag installé dans ~/.local/bin (devant le paquet apt dans le PATH)."
+  else
+    warn "Échec de compilation d'alacritty — le paquet apt reste utilisé."
+  fi
 }
 
 # ── oh-my-zsh + powerlevel10k + plugins ──────────────────────────────────────
@@ -355,6 +400,7 @@ if [ "$DO_APT" -eq 1 ]; then
   install_apt
   install_fonts
   install_alacritty_terminfo
+  install_alacritty_from_source
 fi
 init_submodules
 install_zsh_stack

@@ -31,12 +31,9 @@ return {
 
 		local keymap = vim.keymap
 
-		keymap.set(
-			"n",
-			"<leader>ff",
-			"<cmd>Telescope find_files<cr>",
-			{ desc = "Recherche noms fichiers" }
-		)
+		keymap.set("n", "<leader>ff", function()
+			require("telescope.builtin").find_files({ hidden = true })
+		end, { desc = "Recherche noms fichiers" })
 		keymap.set(
 			"n",
 			"<leader>fr",
