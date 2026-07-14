@@ -32,19 +32,20 @@ warn() { printf '\033[1;33m!!\033[0m  %s\n' "$*" >&2; }
 
 # ── paquets système (apt) ────────────────────────────────────────────────────
 APT_PACKAGES=(
-  # base
-  git stow curl unzip zsh software-properties-common
+  # base / build
+  git stow curl unzip zsh software-properties-common build-essential
   # éditeurs / gestionnaires de fichiers
   neovim vim ranger
   # environnement graphique i3
   i3 i3status i3lock picom feh network-manager-gnome
   pulseaudio-utils brightnessctl suckless-tools
   # terminal & fetch
-  alacritty neofetch
-  # outils CLI référencés par la config (fzf, bat, fd, eza, tree)
-  fzf bat fd-find tree eza
-  # ranger a besoin de python3
-  python3
+  alacritty neofetch fontconfig
+  # outils CLI référencés par la config (fzf, bat, fd, eza, tree, ripgrep)
+  fzf bat fd-find tree eza ripgrep
+  # runtime nvim : python3 (ranger), node/npm (copilot + serveurs LSP Mason),
+  #                cargo (pour compiler le CLI tree-sitter, cf. install_nvim_toolchain)
+  python3 nodejs npm cargo
 )
 
 install_apt() {
@@ -97,6 +98,46 @@ install_apt() {
   [ -e /usr/bin/batcat ] && ln -sf /usr/bin/batcat "$HOME/.local/bin/bat"
 }
 
+# ── polices (Maple Mono NF pour alacritty, MesloLGS NF pour powerlevel10k) ────
+# Elles ne sont pas versionnées : on récupère la dernière release GitHub.
+install_fonts() {
+  local FONT_DIR="$HOME/.local/share/fonts"
+  mkdir -p "$FONT_DIR"
+
+  # $1 = repo GitHub, $2 = regex de l'asset .zip, $3 = sous-dossier cible
+  _install_font_zip() {
+    local repo="$1" pat="$2" dest="$FONT_DIR/$3"
+    if [ -d "$dest" ] && [ -n "$(ls -A "$dest" 2>/dev/null)" ]; then
+      log "Police déjà présente : $3"; return
+    fi
+    local url
+    url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" \
+          | grep -oE '"browser_download_url": *"[^"]*"' \
+          | sed 's/.*: *"//; s/"$//' \
+          | grep -iE "$pat" | head -1)
+    if [ -z "$url" ]; then
+      warn "Police introuvable dans la dernière release de $repo (motif: $pat) — à installer à la main."
+      return
+    fi
+    log "Téléchargement police $3 depuis $repo…"
+    local tmp; tmp=$(mktemp -d)
+    if curl -fsSL "$url" -o "$tmp/font.zip" && mkdir -p "$dest" && unzip -qo "$tmp/font.zip" -d "$dest"; then
+      :
+    else
+      warn "Échec installation police $3."
+    fi
+    rm -rf "$tmp"
+  }
+
+  # Maple Mono NF : police principale d'alacritty (obligatoire).
+  _install_font_zip subframe7536/maple-font 'MapleMono-?NF\.zip' MapleMono
+  # MesloLGS NF : police recommandée par powerlevel10k (icônes du prompt).
+  _install_font_zip ryanoasis/nerd-fonts 'Meslo\.zip' Meslo
+
+  log "Rafraîchissement du cache de polices…"
+  fc-cache -f >/dev/null 2>&1 || true
+}
+
 # ── oh-my-zsh + powerlevel10k + plugins ──────────────────────────────────────
 install_zsh_stack() {
   local ZSH_DIR="$HOME/.oh-my-zsh"
@@ -120,16 +161,48 @@ install_zsh_stack() {
   clone_if_absent https://github.com/zsh-users/zsh-syntax-highlighting.git "$CUSTOM/plugins/zsh-syntax-highlighting"
 }
 
+# ── toolchain treesitter pour nvim ───────────────────────────────────────────
+# La config nvim utilise tree-sitter-manager.nvim, qui shell-out vers le CLI
+# `tree-sitter build` (sous-commande ≥ 0.22). Le paquet apt est figé en 0.20.8 :
+# on installe le CLI récent via cargo. Le plugin utilise aussi `git --no-advice`
+# (git ≥ 2.44).  Cf. note mémoire nvim-treesitter-toolchain.
+install_nvim_toolchain() {
+  # 1. git ≥ 2.44 — sur Ubuntu, le PPA git-core fournit une version récente.
+  local git_major git_minor
+  git_major=$(git --version | grep -oE '[0-9]+' | sed -n 1p)
+  git_minor=$(git --version | grep -oE '[0-9]+' | sed -n 2p)
+  if [ "$git_major" -lt 2 ] || { [ "$git_major" -eq 2 ] && [ "$git_minor" -lt 44 ]; }; then
+    if command -v add-apt-repository >/dev/null 2>&1 || sudo apt-get install -y -qq software-properties-common 2>/dev/null; then
+      log "git $git_major.$git_minor trop ancien (< 2.44) → ajout ppa:git-core/ppa…"
+      sudo add-apt-repository -y ppa:git-core/ppa && sudo apt-get update -qq && sudo apt-get install -y -qq git \
+        || warn "Échec upgrade git via PPA — mets git ≥ 2.44 à la main."
+    else
+      warn "git $git_major.$git_minor < 2.44 : treesitter cassera. Mets git à jour manuellement."
+    fi
+  fi
+
+  # 2. CLI tree-sitter ≥ 0.22 via cargo (installe dans ~/.cargo/bin).
+  if command -v cargo >/dev/null 2>&1; then
+    if ! "$HOME/.cargo/bin/tree-sitter" --version >/dev/null 2>&1 && ! command -v tree-sitter >/dev/null 2>&1; then
+      log "Installation du CLI tree-sitter via cargo (peut prendre quelques minutes)…"
+      cargo install tree-sitter-cli || warn "cargo install tree-sitter-cli a échoué."
+    else
+      log "CLI tree-sitter déjà présent."
+    fi
+  else
+    warn "cargo absent : impossible d'installer le CLI tree-sitter récent (treesitter cassera)."
+  fi
+}
+
 # ── réglages nécessaires au fonctionnement de la config zsh ───────────────────
 setup_zsh_env() {
   # La config zsh vit dans ~/.config/zsh et s'appuie sur $ZDOTDIR. zsh ne lit
-  # ZDOTDIR que depuis ~/.zshenv (ou /etc/zsh/zshenv) : on le pose ici.
+  # ZDOTDIR que depuis ~/.zshenv (ou /etc/zsh/zshenv) : on le pose ici. On y
+  # ajoute aussi ~/.cargo/bin au PATH (pour trouver le CLI tree-sitter récent).
   local ZSHENV="$HOME/.zshenv"
-  local LINE='export ZDOTDIR="$HOME/.config/zsh"'
-  if ! { [ -f "$ZSHENV" ] && grep -qF 'ZDOTDIR' "$ZSHENV"; }; then
-    log "Configuration de ZDOTDIR dans ~/.zshenv"
-    printf '%s\n' "$LINE" >> "$ZSHENV"
-  fi
+  touch "$ZSHENV"
+  grep -qF 'ZDOTDIR' "$ZSHENV"   || { log "ZDOTDIR → ~/.zshenv"; printf '%s\n' 'export ZDOTDIR="$HOME/.config/zsh"' >> "$ZSHENV"; }
+  grep -qF '.cargo/bin' "$ZSHENV" || printf '%s\n' 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$ZSHENV"
 
   # Dossier de l'historique (HISTFILE=~/.local/state/zsh/history).
   mkdir -p "$HOME/.local/state/zsh"
@@ -139,26 +212,6 @@ setup_zsh_env() {
     log "Passage de zsh en shell par défaut (chsh)…"
     chsh -s "$(command -v zsh)" || warn "chsh a échoué — change de shell manuellement."
   fi
-}
-
-# ── police du terminal (Maple Mono NF, requise par alacritty.toml) ───────────
-install_font() {
-  local FONT_DIR="$HOME/.local/share/fonts/MapleMono"
-  if fc-list | grep -q "^.*: Maple Mono NF:"; then
-    log "Police Maple Mono NF déjà installée."
-    return
-  fi
-  log "Installation de la police Maple Mono NF…"
-  local TMP; TMP="$(mktemp -d)"
-  if curl -fsSL -o "$TMP/MapleMono-NF.zip" \
-      https://github.com/subframe7536/maple-font/releases/latest/download/MapleMono-NF.zip; then
-    mkdir -p "$FONT_DIR"
-    unzip -oq "$TMP/MapleMono-NF.zip" -d "$FONT_DIR"
-    fc-cache -f "$FONT_DIR" >/dev/null
-  else
-    warn "Téléchargement de la police Maple Mono NF échoué — installe-la à la main dans $FONT_DIR."
-  fi
-  rm -rf "$TMP"
 }
 
 # ── sous-modules git (thème alacritty) ───────────────────────────────────────
@@ -171,7 +224,7 @@ init_submodules() {
 # On liste explicitement les paquets : on exclut 'wallpaper' (asset brut, pas
 # une arbo $HOME) et les fichiers de notes à la racine.
 STOW_PACKAGES=(
-  alacritty autostart chrome i3 i3status neofetch nvim ranger vim xdg zsh
+  alacritty autostart chrome i3 i3status neofetch nvim ranger script vim xdg zsh
 )
 
 run_stow() {
@@ -181,9 +234,9 @@ run_stow() {
   log "Création des liens symboliques (stow) vers $HOME…"
   for pkg in "${STOW_PACKAGES[@]}"; do
     [ -d "$DOTFILES/$pkg" ] || { warn "paquet absent : $pkg"; continue; }
-    # --restow nettoie les liens obsolètes ; --no-folding pour du lien fichier à
-    # fichier (évite d'adopter tout un ~/.config/xxx existant par erreur).
-    if stow -v --restow --target="$HOME" "$pkg" 2>&1 | sed 's/^/    /'; then
+    # --ignore : ne jamais lier d'éventuels .claude (artefacts Claude Code) qui
+    # traîneraient dans un arbre de travail non propre.
+    if stow -v --restow --ignore='\.claude' --target="$HOME" "$pkg" 2>&1 | sed 's/^/    /'; then
       :
     else
       warn "Conflit stow sur '$pkg'. Sauvegarde/supprime le fichier existant puis relance : stow --restow -t \$HOME $pkg"
@@ -203,13 +256,21 @@ if [ "$RESTOW_ONLY" -eq 1 ]; then
   exit 0
 fi
 
-[ "$DO_APT" -eq 1 ] && install_apt
-install_font
+if [ "$DO_APT" -eq 1 ]; then
+  install_apt
+  install_fonts
+fi
 init_submodules
 install_zsh_stack
+install_nvim_toolchain
 setup_zsh_env
 run_stow
 notice_wallpaper
 
 log "Terminé. Ouvre un nouveau terminal (ou 'exec zsh') pour charger la config."
-warn "Note Firefox : le profil chrome/ pointe vers 'nwp6ml0j.default-release'. Renomme le dossier lié pour correspondre à ton nouveau profil si besoin."
+echo
+warn "nvim / treesitter : au premier lancement, installe les gros parsers UN PAR UN"
+warn "  (:TSInstall cpp puis :TSInstall vim) — l'install groupée peut OOM sur < 8 Gio RAM."
+warn "Firefox : le profil chrome/ pointe vers 'nwp6ml0j.default-release' ; renomme le"
+warn "  dossier lié pour correspondre à ton nouveau profil."
+warn "Polices : configure le terminal sur 'Maple Mono NF' si les icônes manquent."
