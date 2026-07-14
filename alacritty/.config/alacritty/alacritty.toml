@@ -1,4 +1,3 @@
-import = ["~/.config/alacritty/themes/themes/ganbaru_black.toml"]
 
 [env]
 TERM="alacritty"
@@ -11,7 +10,7 @@ decorations = "None"
 dynamic_title = true
 
 [font]
-size = 8
+size = 9
 
 [font.normal]
 family = "Maple Mono NF"
@@ -48,3 +47,6 @@ history = 10000
 key = "Return"
 mods = "Shift"
 chars = "\u001B\r"
+
+[general]
+import = ["~/.config/alacritty/themes/themes/ganbaru_black.toml"]
