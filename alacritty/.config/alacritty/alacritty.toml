@@ -10,7 +10,7 @@ decorations = "None"
 dynamic_title = true
 
 [font]
-size = 9
+size = 8
 
 [font.normal]
 family = "Maple Mono NF"
