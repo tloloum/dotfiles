@@ -254,9 +254,10 @@ init_submodules() {
 
 # ── liens symboliques via stow ───────────────────────────────────────────────
 # On liste explicitement les paquets : on exclut 'wallpaper' (asset brut, pas
-# une arbo $HOME) et les fichiers de notes à la racine.
+# une arbo $HOME), les notes à la racine, et 'chrome' (Firefox, géré à part par
+# deploy_firefox car le nom de profil est aléatoire → pas stowable).
 STOW_PACKAGES=(
-  alacritty autostart chrome i3 i3status neofetch nvim ranger script vim xdg zsh
+  alacritty autostart i3 i3status neofetch nvim ranger script vim xdg zsh
 )
 
 run_stow() {
@@ -276,6 +277,67 @@ run_stow() {
   done
 }
 
+# ── Firefox (thème DownToneUI + user.js + policy Sidebery) ───────────────────
+# Non stowable : le profil Firefox de Mint est ~/.config/mozilla/firefox/
+# <aléatoire>.default-release. On détecte le profil et on y lie chrome/ + user.js.
+FF_ROOT="$HOME/.config/mozilla/firefox"
+SIDEBERY_ID="{3c078156-979c-498b-8990-85f7987dd929}"
+
+_find_ff_profile() {
+  # 1) valeur Default= de la section [Install*] de profiles.ini (profil lancé)
+  # 2) sinon un dossier *.default-release existant
+  local ini="$FF_ROOT/profiles.ini" rel=""
+  if [ -f "$ini" ]; then
+    rel=$(awk -F= '/^\[Install/{i=1;next} i&&/^Default=/{print $2; exit}' "$ini")
+  fi
+  if [ -n "$rel" ] && [ -d "$FF_ROOT/$rel" ]; then
+    printf '%s\n' "$FF_ROOT/$rel"; return 0
+  fi
+  local p; p=$(ls -d "$FF_ROOT"/*.default-release 2>/dev/null | head -1)
+  [ -n "$p" ] && { printf '%s\n' "$p"; return 0; }
+  return 1
+}
+
+deploy_firefox() {
+  local src="$DOTFILES/chrome"
+  [ -d "$src/chrome" ] || { warn "chrome/ absent du dépôt — Firefox ignoré."; return; }
+
+  local prof
+  if ! prof=$(_find_ff_profile); then
+    warn "Aucun profil Firefox trouvé. Lance Firefox une fois (pour le créer), puis :"
+    warn "  ./install.sh --restow   (ou relance ./install.sh)"
+    return
+  fi
+  log "Profil Firefox : $prof"
+
+  # chrome/ et user.js → liens symboliques dans le profil (sauvegarde si réels).
+  local ts; ts=$(date +%s)
+  for item in chrome user.js; do
+    local tgt="$prof/$item"
+    if [ -L "$tgt" ]; then rm -f "$tgt"
+    elif [ -e "$tgt" ]; then mv "$tgt" "$tgt.bak.$ts"; warn "Sauvegarde: $tgt → $tgt.bak.$ts"; fi
+    ln -s "$src/$item" "$tgt"
+    log "lié: $item → $tgt"
+  done
+
+  # policies.json → auto-install Sidebery (system-wide, nécessite sudo).
+  if [ -f "$src/policies.json" ]; then
+    local poldir="/etc/firefox/policies"
+    if sudo mkdir -p "$poldir" && sudo cp "$src/policies.json" "$poldir/policies.json"; then
+      log "policies.json installée ($poldir) — Sidebery s'installera au 1er lancement."
+    else
+      warn "Échec install policies.json — installe Sidebery à la main depuis addons.mozilla.org."
+    fi
+  fi
+
+  # Rappel réglages Sidebery (IndexedDB, non versionnable en fichier).
+  if [ -f "$src/sidebery-backup.json" ]; then
+    warn "Sidebery : importe tes réglages via Sidebery → Aide → Import settings from file → $src/sidebery-backup.json"
+  else
+    warn "Sidebery : pense à exporter tes réglages (Sidebery → Aide → Export settings) vers $src/sidebery-backup.json et à les committer."
+  fi
+}
+
 # ── wallpaper : rien à stow, on rappelle juste où il est ─────────────────────
 notice_wallpaper() {
   log "Fond d'écran disponible : $DOTFILES/wallpaper/foret.jpg"
@@ -285,6 +347,7 @@ notice_wallpaper() {
 # ── déroulé ──────────────────────────────────────────────────────────────────
 if [ "$RESTOW_ONLY" -eq 1 ]; then
   run_stow
+  deploy_firefox
   exit 0
 fi
 
@@ -298,12 +361,13 @@ install_zsh_stack
 install_nvim_toolchain
 setup_zsh_env
 run_stow
+deploy_firefox
 notice_wallpaper
 
 log "Terminé. Ouvre un nouveau terminal (ou 'exec zsh') pour charger la config."
 echo
 warn "nvim / treesitter : au premier lancement, installe les gros parsers UN PAR UN"
 warn "  (:TSInstall cpp puis :TSInstall vim) — l'install groupée peut OOM sur < 8 Gio RAM."
-warn "Firefox : le profil chrome/ pointe vers 'nwp6ml0j.default-release' ; renomme le"
-warn "  dossier lié pour correspondre à ton nouveau profil."
+warn "Firefox : lance-le une fois pour que Sidebery s'installe, puis importe tes réglages"
+warn "  Sidebery (voir chrome/README.md). Redémarre Firefox pour appliquer le thème."
 warn "Polices : configure le terminal sur 'Maple Mono NF' si les icônes manquent."
