@@ -1,0 +1,9 @@
+# Artefacts Claude Code (réglages locaux, jamais à versionner)
+.claude/
+
+# Caches Python de ranger
+__pycache__/
+*.py[co]
+
+# Cache de complétion zsh (régénéré par machine)
+.zcompdump*
