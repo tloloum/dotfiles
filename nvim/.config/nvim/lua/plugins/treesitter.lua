@@ -16,7 +16,6 @@ return {
         "markdown_inline",
         "python",
         "rst",
-        "rust",
         "typescript",
         "vim",
       },
