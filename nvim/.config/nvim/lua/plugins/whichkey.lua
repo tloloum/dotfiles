@@ -52,6 +52,7 @@ return {
 			{ "<leader>bo", desc = "Order", icon = { icon = "󰆧", color = "blue" } },
 			{ "<leader>bs", desc = "Split", icon = { icon = "󰆧", color = "blue" } },
 			{ "<leader>bc", desc = "Close", icon = { icon = "󰆧", color = "blue" } },
+			{ "<leader>s", desc = "Resize", icon = { icon = "󰆧", color = "blue" } },
 			{ "<leader>f", group = "Find (Telescope)", icon = { icon = "", color = "green" }, order = 25 },
 			{ "<leader>c", group = "Code (LSP)", icon = { icon = "", color = "yellow" }, order = 2 },
 			{ "<leader>r", group = "Rename (LSP)", icon = { icon = "", color = "orange" }, order = 3 },
