@@ -163,7 +163,7 @@ bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcu
 
 #htop 
 bindsym $mod+t exec alacritty -e htop
-
+bindsym $mod+p exec cinnamon-settings
 bindsym $mod+shift+x exec --no-startup-id ~/.config/i3/lock.sh
 
 # resize window (you can also use the mouse for that)
