@@ -34,3 +34,12 @@ opt.undofile = true
 opt.list = true
 opt.listchars:append({ tab = "  ", nbsp = "␣", trail = "•", precedes = "«", extends = "»" })
 
+opt.fillchars:append({
+	vert = "┃",
+	horiz = "━",
+	horizup = "┻",
+	horizdown = "┳",
+	vertleft = "┫",
+	vertright = "┣",
+	verthoriz = "╋",
+})

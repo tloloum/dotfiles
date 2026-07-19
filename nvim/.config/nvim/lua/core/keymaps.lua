@@ -14,3 +14,5 @@ keymap("n", "<C-l>", "<C-w>l", { desc = "Move Down" })
 keymap("n", "<leader>bsv", "<C-w>v", { desc = "Vertical" })
 keymap("n", "<leader>bsh", "<C-w>s", { desc = "Horizontal" })
 keymap("n", "<leader>bsq", "<C-w>c", { desc = "Close split" })
+
+keymap("n", "<leader>nh", ":nohl<CR>", { desc = "No highlighting" })
