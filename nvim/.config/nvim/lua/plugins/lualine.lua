@@ -17,7 +17,9 @@ return {
         },
         ignore_focus = {},
         always_divide_middle = true,
-        globalstatus = false,
+        -- Statusline unique en bas d'écran (laststatus=3) : libère la ligne
+        -- entre fenêtres empilées pour que les séparateurs horizontaux s'affichent
+        globalstatus = true,
         refresh = {
           statusline = 1000,
           tabline = 1000,
