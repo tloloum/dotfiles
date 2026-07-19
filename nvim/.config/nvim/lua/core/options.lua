@@ -27,7 +27,10 @@ opt.splitbelow = true
 
 opt.swapfile = false
 
+opt.mousescroll = "ver:8,hor:8"
+
 opt.undofile = true
 
 opt.list = true
 opt.listchars:append({ tab = "  ", nbsp = "␣", trail = "•", precedes = "«", extends = "»" })
+
