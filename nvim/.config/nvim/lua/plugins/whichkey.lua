@@ -54,12 +54,14 @@ return {
 			{ "<leader>h", group = "Git hunks", icon = { icon = "", color = "red" }, order = 4 },
 			{ "<leader>x", group = "Diagnostics", icon = { icon = "", color = "purple" }, order = 5 },
 			{ "<leader>w", group = "Fenêtres", icon = { icon = "", color = "blue" }, order = 6 },
-			{ "<leader>t", group = "Tabs", icon = { icon = "", color = "cyan" }, order = 7 },
+			{ "<leader>t", group = "TODO / Themes ", icon = { icon = "", color = "cyan" }, order = 7 },
 			{ "<leader>d", desc = "Diagnostic (ligne)", icon = { icon = "", color = "yellow" }, order = 20 },
 			{ "<leader>D", desc = "Diagnostics (buffer)", icon = { icon = "", color = "yellow" }, order = 21 },
 			{ "<leader>F", desc = "Formater le buffer", icon = { icon = "󰉼", color = "cyan" }, order = 22 },
 			{ "<leader>e", desc = "Explorateur", icon = { icon = "", color = "green" }, order = 23 },
 			{ "<leader>q", desc = "Fermer le buffer", icon = { icon = "󰅖", color = "red" }, order = 24 },
+			{ "<leader>b", desc = "Buffer", icon = { icon = "󰆧", color = "blue" }, order = 25 },
+			{ "<leader>bo", desc = "Order", icon = { icon = "󰆧", color = "blue" }, order = 26 },
 		})
 	end,
 }
