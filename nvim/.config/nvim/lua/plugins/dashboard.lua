@@ -29,6 +29,23 @@ return {
       end,
 
       items = {
+        {
+          {
+            name = "Reprendre la session (dossier courant)",
+            action = function() require("persistence").load() end,
+            section = "Sessions",
+          },
+          {
+            name = "Reprendre la dernière session",
+            action = function() require("persistence").load({ last = true }) end,
+            section = "Sessions",
+          },
+          {
+            name = "Choisir une session",
+            action = function() require("persistence").select() end,
+            section = "Sessions",
+          },
+        },
         starter.sections.recent_files(10, true),  -- fichiers récents du dossier courant
         starter.sections.recent_files(10, false), -- fichiers récents (globaux)
         starter.sections.builtin_actions(),       -- nouveau fichier / quitter
