@@ -10,10 +10,10 @@ return {
 	end,
 	opts = {
 		animation = true,
+		clickable = true,
 		sidebar_filetypes = {
 			NvimTree = true,
 		},
-		clickable = true,
 		icons = {
 			button = "",
 			modified = { button = "●" },
@@ -28,7 +28,8 @@ return {
 		{ "<leader>br",  "<cmd>BufferPick<cr>",                desc = "First Letter" },
 		{ "<leader>bq",  "<cmd>BufferClose<cr>",               desc = "Close" },
 		{ "<leader>bp",  "<cmd>BufferPin<cr>",                 desc = "Pin" },
-		{ "<leader>bcp", "<cmd>BufferCloseAllButCurrent<cr>",  desc = "Close All But Current" },
+		{ "<leader>bcc", "<cmd>BufferCloseAllButCurrent<cr>",  desc = "All But Current" },
+		{ "<leader>bco", "<cmd>BufferCloseAllButPinned<cr>",   desc = "All But Pinned" },
 		{ "<leader>boh", "<cmd>BufferMovePrevious<cr>",        desc = "Move Left" },
 		{ "<leader>bol", "<cmd>BufferMoveNext<cr>",            desc = "Move Right" },
 		{ "<leader>boh", "<cmd>BufferMovePrevious<cr>",        desc = "Move Left" },

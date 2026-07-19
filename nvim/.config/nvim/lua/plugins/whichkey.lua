@@ -48,7 +48,11 @@ return {
 		-- Groupes : icône colorée + ordre d'affichage (order < 1000 => remonte).
 		-- Les entrées sans `order` valent 1000 et suivent, triées normalement.
 		wk.add({
-			{ "<leader>f", group = "Find (Telescope)", icon = { icon = "", color = "green" }, order = 1 },
+			{ "<leader>b", desc = "Buffer", icon = { icon = "󰆧", color = "blue" }, order = 1 },
+			{ "<leader>bo", desc = "Order", icon = { icon = "󰆧", color = "blue" } },
+			{ "<leader>bs", desc = "Split", icon = { icon = "󰆧", color = "blue" } },
+			{ "<leader>bc", desc = "Close", icon = { icon = "󰆧", color = "blue" } },
+			{ "<leader>f", group = "Find (Telescope)", icon = { icon = "", color = "green" }, order = 25 },
 			{ "<leader>c", group = "Code (LSP)", icon = { icon = "", color = "yellow" }, order = 2 },
 			{ "<leader>r", group = "Rename (LSP)", icon = { icon = "", color = "orange" }, order = 3 },
 			{ "<leader>h", group = "Git hunks", icon = { icon = "", color = "red" }, order = 4 },
@@ -60,8 +64,6 @@ return {
 			{ "<leader>F", desc = "Formater le buffer", icon = { icon = "󰉼", color = "cyan" }, order = 22 },
 			{ "<leader>e", desc = "Explorateur", icon = { icon = "", color = "green" }, order = 23 },
 			{ "<leader>q", desc = "Fermer le buffer", icon = { icon = "󰅖", color = "red" }, order = 24 },
-			{ "<leader>b", desc = "Buffer", icon = { icon = "󰆧", color = "blue" }, order = 25 },
-			{ "<leader>bo", desc = "Order", icon = { icon = "󰆧", color = "blue" }, order = 26 },
 		})
 	end,
 }
