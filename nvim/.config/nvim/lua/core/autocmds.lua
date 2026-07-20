@@ -19,3 +19,19 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 		vim.hl.on_yank({ timeout = 200 })
 	end,
 })
+
+
+vim.api.nvim_create_autocmd('LspAttach', {
+	group = vim.api.nvim_create_augroup('my.lsp', {}),
+	callback = function(ev)
+		local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
+
+		if client:supports_method('textDocument/inlayHint') then
+			vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
+		end
+
+		vim.keymap.set('n', '<leader>th', function()
+			vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = ev.buf }), { bufnr = ev.buf })
+		end, { buffer = ev.buf, desc = 'Toggle Inlay Hints' })
+	end,
+})
