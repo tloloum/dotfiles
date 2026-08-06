@@ -13,14 +13,14 @@ return {
 				lua = { "stylua" },
 				markdown = { "prettier" },
 				python = { "ruff_fix", "ruff_format" },
-				rust = { "rustfmt" },
 				javascript = { "prettier" },
 				javascriptreact = { "prettier" },
 				typescript = { "prettier" },
 				typescriptreact = { "prettier" },
 				cpp = { "clang_format" },
 				c = { "clang_format" },
-				cmake = { "cmake_format" },
+				cmake = { "gersemi" },
+				tex = { "tex-fmt" },
 			},
 
 			format_on_save = {
@@ -28,7 +28,6 @@ return {
 				async = false,
 				timeout_ms = 1000,
 			},
-
 		})
 
 		vim.keymap.set({ "n", "v" }, "<leader>F", function()
