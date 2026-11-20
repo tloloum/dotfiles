@@ -37,7 +37,7 @@ APT_PACKAGES=(
   # éditeurs / gestionnaires de fichiers
   neovim vim ranger
   # environnement graphique i3
-  i3 i3status i3lock picom feh network-manager-gnome
+  i3 i3status i3lock picom feh network-manager-gnome polybar pavucontrol
   pulseaudio-utils brightnessctl suckless-tools
   # terminal & fetch
   # (le paquet alacritty est gardé pour son .desktop/ses icônes, mais
@@ -302,7 +302,7 @@ init_submodules() {
 # une arbo $HOME), les notes à la racine, et 'chrome' (Firefox, géré à part par
 # deploy_firefox car le nom de profil est aléatoire → pas stowable).
 STOW_PACKAGES=(
-  alacritty autostart i3 i3status neofetch nvim ranger script vim xdg zsh
+  alacritty autostart i3 i3status neofetch nvim polybar ranger script vim xdg zsh
 )
 
 run_stow() {
