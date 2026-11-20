@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+"""Menu Bluetooth rofi + bluetoothctl, ouvert depuis l'icône Bluetooth de polybar.
+
+  en-tête   : appareil(s) connecté(s) en gras (+ batterie) ; rien si aucun
+              (« Bluetooth disabled » si l'adaptateur est éteint)
+  liste     : appareils connus de bluez (appairés + découverts par un scan) ;
+              connectés, puis appairés, puis le reste ; icône selon le type,
+              marque-page si appairé
+  actions   : Rescan, Disable Bluetooth
+  Alt+d     : oublier l'appareil sélectionné (s'il est appairé)
+
+Choisir un appareil : connecté → déconnexion ; appairé → connexion ;
+inconnu → appairage + confiance + connexion.
+"""
+import os
+import re
+import sys
+
+sys.dont_write_bytecode = True  # pas de __pycache__ dans les dotfiles
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from menulib import (FORGET, ICON_KNOWN, ICON_POWER, ICON_RESCAN, confirm_forget,  # noqa: E402
+                     dim, esc, forget_hint, rofi, run)
+from menulib import notify as _notify  # noqa: E402
+
+SCAN_SECONDS = 8
+
+ICON_BT = "\U000F00AF"
+ICON_BT_OFF = "\U000F00B2"
+ICON_BT_CONNECTED = "\U000F00B1"
+TYPE_ICONS = {  # champ « Icon » de bluetoothctl info
+    "audio-headset": "\U000F02CB",
+    "audio-headphones": "\U000F02CB",
+    "audio-card": "\U000F04C3",
+    "input-keyboard": "\U000F030C",
+    "input-mouse": "\U000F037D",
+    "input-gaming": "\U000F0297",
+    "phone": "\U000F011C",
+    "computer": "\U000F0322",
+}
+MAC_LIKE = re.compile(r"^([0-9A-F]{2}[-:]){5}[0-9A-F]{2}$", re.I)
+
+
+def notify(summary, body="", urgency="normal"):
+    _notify(summary, body, urgency, app="bluetooth-menu")
+
+
+# ── bluetoothctl ─────────────────────────────────────────────────────────────
+def btctl(*args, timeout=None):
+    cmd = ["bluetoothctl"] + (["--timeout", str(timeout)] if timeout else []) + list(args)
+    return run(*cmd)
+
+
+def powered():
+    return "Powered: yes" in btctl("show").stdout
+
+
+def device_info(mac):
+    info = {"mac": mac}
+    for line in btctl("info", mac).stdout.splitlines():
+        key, sep, value = line.strip().partition(": ")
+        if sep:
+            info[key] = value
+    name = info.get("Alias") or info.get("Name") or mac
+    battery = re.search(r"\((\d+)\)", info.get("Battery Percentage", ""))
+    return {
+        "mac": mac,
+        "name": name,
+        "icon": TYPE_ICONS.get(info.get("Icon", ""), ICON_BT),
+        "paired": info.get("Paired") == "yes",
+        "connected": info.get("Connected") == "yes",
+        "battery": int(battery.group(1)) if battery else None,
+    }
+
+
+def devices():
+    """Appareils nommés connus de bluez, triés : connectés, appairés, autres."""
+    out = btctl("devices").stdout
+    devs = []
+    for line in out.splitlines():
+        parts = line.split(" ", 2)
+        if len(parts) < 3 or parts[0] != "Device":
+            continue
+        mac, name = parts[1], parts[2]
+        if MAC_LIKE.match(name):  # appareil sans nom (balises BLE…)
+            continue
+        devs.append(device_info(mac))
+    devs.sort(key=lambda d: (not d["connected"], not d["paired"], d["name"].lower()))
+    return devs
+
+
+# ── actions ──────────────────────────────────────────────────────────────────
+def activate(dev):
+    name, mac = dev["name"], dev["mac"]
+    if dev["connected"]:
+        res = btctl("disconnect", mac)
+        ok_msg, ko_msg = f"Disconnected {name}", f"Failed to disconnect {name}"
+    else:
+        if not dev["paired"]:
+            notify(f"Pairing {name}…")
+            res = btctl("pair", mac, timeout=20)
+            if "Pairing successful" not in res.stdout:
+                notify(f"Failed to pair {name}", res.stdout.strip()[-300:], urgency="critical")
+                return
+            btctl("trust", mac)
+        res = btctl("connect", mac, timeout=15)
+        ok_msg, ko_msg = f"Connected to {name}", f"Failed to connect to {name}"
+    if res.returncode == 0 and "Failed" not in res.stdout:
+        notify(ok_msg)
+    else:
+        notify(ko_msg, res.stdout.strip()[-300:], urgency="critical")
+
+
+def forget(dev):
+    if not confirm_forget(dev["name"]):
+        return
+    res = btctl("remove", dev["mac"])
+    if "removed" in res.stdout.lower():
+        notify(f"Forgot {dev['name']}")
+    else:
+        notify(f"Failed to forget {dev['name']}", res.stdout.strip(), urgency="critical")
+
+
+def set_power(on):
+    if on:
+        run("rfkill", "unblock", "bluetooth")  # au cas où l'adaptateur est soft-bloqué
+    btctl("power", "on" if on else "off")
+    notify("Bluetooth enabled" if on else "Bluetooth disabled")
+
+
+# ── menu ─────────────────────────────────────────────────────────────────────
+def main(rescan=False):
+    if not powered():
+        _, choice = rofi([f"{ICON_POWER}  Enable Bluetooth"], ICON_BT_OFF,
+                         header=f"{ICON_BT_OFF}  <i>Bluetooth disabled</i>")
+        if choice == "0":
+            set_power(True)
+        return
+
+    if rescan:
+        notify("Scanning Bluetooth…", f"{SCAN_SECONDS} s")
+        btctl("scan", "on", timeout=SCAN_SECONDS)
+    devs = devices()
+
+    connected = [d for d in devs if d["connected"]]
+    header = None
+    if connected:
+        parts = []
+        for d in connected:
+            battery = f"  {dim(f'{d['battery']}%')}" if d["battery"] is not None else ""
+            parts.append(f"<b>{esc(d['name'])}</b>{battery}")
+        header = f"{ICON_BT_CONNECTED}  " + "   ".join(parts)
+
+    width = max((len(d["name"]) for d in devs), default=0)
+    rows, actions, active_idx = [], [], None
+    for d in devs:
+        mark = ICON_KNOWN if d["paired"] else " "
+        rows.append(f"{d['icon']}  {esc(d['name'].ljust(width))}  {dim(mark)}")
+        actions.append(("device", d))
+        if d["connected"] and active_idx is None:
+            active_idx = len(rows) - 1
+
+    rows.append(f"{ICON_RESCAN}  Rescan")
+    actions.append(("rescan", None))
+    rows.append(f"{ICON_POWER}  Disable Bluetooth")
+    actions.append(("disable", None))
+
+    hint = forget_hint() if any(d["paired"] for d in devs) else ""
+
+    code, choice = rofi(rows, ICON_BT, mesg=hint, active=active_idx, header=header)
+    if not choice or not choice.isdigit():
+        return
+    kind, dev = actions[int(choice)]
+    if code == FORGET:
+        if kind == "device" and dev["paired"]:
+            forget(dev)
+        main()
+    elif kind == "device":
+        activate(dev)
+    elif kind == "rescan":
+        main(rescan=True)
+    elif kind == "disable":
+        set_power(False)
+
+
+if __name__ == "__main__":
+    main(rescan="--rescan" in sys.argv)

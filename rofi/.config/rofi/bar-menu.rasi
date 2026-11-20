@@ -1,4 +1,4 @@
-/* Menu wifi (scripts/wifi-menu) : thème noir, ancré sous l'icône wifi de polybar */
+/* Menus de la barre (scripts/wifi-menu, scripts/bluetooth-menu) : thème noir, ancré sous les icônes wifi/bluetooth de polybar */
 @import "noir.rasi"
 
 window {

@@ -10,39 +10,43 @@
 Choisir un réseau s'y connecte : profil enregistré si connu, sinon demande du
 mot de passe (réseau sécurisé) puis création du profil.
 """
-import html
+import os
 import subprocess
 import sys
 
-THEME = "wifi"  # ~/.config/rofi/wifi.rasi
+sys.dont_write_bytecode = True  # pas de __pycache__ dans les dotfiles
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from menulib import (FORGET, ICON_KNOWN, ICON_POWER, ICON_RESCAN, confirm_forget,  # noqa: E402
+                     dim, esc, forget_hint, rofi, run)
+from menulib import notify as _notify  # noqa: E402
+
 TERMINAL = ["alacritty", "--class", "wifi-float"]  # flottant via règle i3
-DIM = "#6e6e6e"  # = fg-dim du thème
-KEY_FORGET = "Alt+d"
 
 SIGNAL_ICONS = ["\U000F092F", "\U000F091F", "\U000F0922", "\U000F0925", "\U000F0928"]
 ICON_OFF = "\U000F05AA"
-ICON_KNOWN = "\uf02e"  # marque-page : réseau déjà enregistré
-ICON_LOCK = "\uf023"
-ICON_TRASH = "\U000F01B4"
+ICON_WIFI = "\U000F05A9"
+ICON_LOCK = ""
 ICON_ETH = "\U000F0200"
-ICON_RESCAN = "\U000F0450"
 ICON_QR = "\U000F0432"
-ICON_POWER = "\U000F0425"
+
+
+def notify(summary, body="", urgency="normal"):
+    _notify(summary, body, urgency, app="wifi-menu")
 
 
 # ── nmcli ────────────────────────────────────────────────────────────────────
-def nmcli(*args, check=False):
-    return subprocess.run(["nmcli", *args], capture_output=True, text=True, check=check)
+def nmcli(*args):
+    return run("nmcli", *args)
 
 
 def split_terse(line):
     """Découpe une ligne `nmcli -t` (les ':' internes sont échappés en '\\:')."""
-    fields, cur, esc = [], "", False
+    fields, cur, escaped = [], "", False
     for ch in line:
-        if esc:
-            cur, esc = cur + ch, False
+        if escaped:
+            cur, escaped = cur + ch, False
         elif ch == "\\":
-            esc = True
+            escaped = True
         elif ch == ":":
             fields.append(cur)
             cur = ""
@@ -53,7 +57,7 @@ def split_terse(line):
 
 
 def scan(rescan=False):
-    """Réseaux visibles, un par SSID (meilleur signal), triés par signal."""
+    """Réseaux visibles, un par SSID (meilleur signal)."""
     out = nmcli("-t", "-f", "IN-USE,SSID,SECURITY,SIGNAL", "dev", "wifi", "list",
                 "--rescan", "yes" if rescan else "no").stdout
     best = {}
@@ -97,45 +101,6 @@ def active_connection():
     return None
 
 
-# ── rofi ─────────────────────────────────────────────────────────────────────
-FORGET = 10  # code de sortie de rofi pour -kb-custom-1
-
-
-def rofi(rows, prompt, mesg="", active=None, password=False, header=None):
-    """Lance rofi. Renvoie (code, sortie) ; code None si Échap.
-
-    header : ligne non sélectionnable placée en tête (index 0 dans la sortie).
-    """
-    cmd = ["rofi", "-dmenu", "-i", "-theme", THEME, "-p", prompt]
-    if password:
-        cmd += ["-password", "-theme-str", "listview { lines: 0; }"]
-    else:
-        cmd += ["-markup-rows", "-no-custom", "-format", "i", "-kb-custom-1", KEY_FORGET]
-    if mesg:
-        cmd += ["-mesg", mesg]
-    if header is not None:
-        rows = [header + "\0nonselectable\x1ftrue"] + rows
-        active = None if active is None else active + 1
-        cmd += ["-selected-row", "1"]  # curseur sur la 1re vraie ligne, pas sur l'en-tête
-    if active is not None:
-        cmd += ["-a", str(active)]
-    res = subprocess.run(cmd, input="\n".join(rows), capture_output=True, text=True)
-    if res.returncode not in (0, FORGET):  # Échap
-        return None, None
-    out = res.stdout.rstrip("\n")
-    if header is not None and out.isdigit():
-        out = str(int(out) - 1)
-    return res.returncode, out
-
-
-def notify(summary, body="", urgency="normal"):
-    subprocess.run(["notify-send", "-a", "wifi-menu", "-u", urgency, summary, body])
-
-
-def esc(text):
-    return html.escape(text, quote=False)
-
-
 # ── actions ──────────────────────────────────────────────────────────────────
 def connect(ap, known):
     ssid = ap["ssid"]
@@ -161,10 +126,7 @@ def connect(ap, known):
 
 
 def forget(ssid, profile):
-    """Confirmation puis suppression du profil enregistré."""
-    _, choice = rofi([f"{ICON_TRASH}  Forget", "Cancel"], ICON_TRASH,
-                     header=f"Forget <b>{esc(ssid)}</b> ?")
-    if choice != "0":
+    if not confirm_forget(ssid):
         return
     res = nmcli("con", "delete", "id", profile)
     if res.returncode == 0:
@@ -219,8 +181,7 @@ def main(rescan=False):
         icon = SIGNAL_ICONS[min(ap["signal"] // 20, 4)]
         lock = ICON_LOCK if ap["sec"] else " "
         mark = ICON_KNOWN if ap["ssid"] in known else " "
-        rows.append(f"{icon}  {esc(ap['ssid'].ljust(width))}  "
-                    f'<span foreground="{DIM}">{lock} {mark}</span>')
+        rows.append(f"{icon}  {esc(ap['ssid'].ljust(width))}  {dim(f'{lock} {mark}')}")
         actions.append(("connect", ap))
         if ap["active"]:
             active_idx = len(rows) - 1
@@ -234,11 +195,9 @@ def main(rescan=False):
     actions.append(("disable", None))
 
     # rappel du raccourci seulement s'il y a un réseau oubliable dans la liste
-    hint = ""
-    if any(a["ssid"] in known for a in aps):
-        hint = f'<span foreground="{DIM}" size="small">{KEY_FORGET}  forget network</span>'
+    hint = forget_hint() if any(a["ssid"] in known for a in aps) else ""
 
-    code, choice = rofi(rows, "\U000F05A9", mesg=hint, active=active_idx, header=header)
+    code, choice = rofi(rows, ICON_WIFI, mesg=hint, active=active_idx, header=header)
     if not choice or not choice.isdigit():
         return
     kind, ap = actions[int(choice)]
