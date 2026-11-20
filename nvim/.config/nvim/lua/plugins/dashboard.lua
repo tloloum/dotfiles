@@ -108,7 +108,10 @@ return {
 
 		vim.api.nvim_create_autocmd("VimEnter", {
 			callback = function()
-				pcall(starter.refresh)
+				-- nvim ouvert sur un fichier : pas de buffer Starter à rafraîchir
+				if vim.bo.filetype == "ministarter" then
+					starter.refresh()
+				end
 			end,
 		})
 	end,
