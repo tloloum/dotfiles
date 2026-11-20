@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""Historique du presse-papier ($mod+c) : menu rofi centré, données de CopyQ.
+
+  Entrée : remet l'élément dans le presse-papier (et en tête de l'historique)
+  Alt+d  : supprime l'élément de l'historique
+Le serveur CopyQ est démarré par scripts/clipboard-daemon (i3, au démarrage).
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True  # pas de __pycache__ dans les dotfiles
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from menulib import DIM, FORGET, KEY_FORGET, esc  # noqa: E402
+
+ICON = "\U000F014C"  # presse-papier
+ICON_IMAGE = "\U000F02E9"
+PREVIEW = 110  # caractères affichés par élément
+
+# script CopyQ : liste des éléments (texte tronqué + image ou non) en JSON
+LIST_ITEMS = """
+var out = [];
+for (var i = 0; i < size(); ++i) {
+    var formats = str(read("?", i));
+    out.push({text: str(read(i)).substring(0, 400), image: formats.indexOf("image/") >= 0});
+}
+print(JSON.stringify(out));
+"""
+
+
+def copyq(*args):
+    return subprocess.run(["copyq", *args], capture_output=True, text=True)
+
+
+def items():
+    res = copyq("eval", "--", LIST_ITEMS)
+    try:
+        return json.loads(res.stdout or "[]")
+    except json.JSONDecodeError:
+        return []
+
+
+def preview(item):
+    if item["image"] and not item["text"].strip():
+        return f'<span foreground="{DIM}">{ICON_IMAGE}  image</span>'
+    text = re.sub(r"\s*\n\s*", " ⏎ ", item["text"].strip())
+    text = re.sub(r"[ \t]+", " ", text)
+    if len(text) > PREVIEW:
+        text = text[:PREVIEW - 1] + "…"
+    return esc(text)
+
+
+def main():
+    entries = items()
+    if not entries:
+        rows = [f'<span foreground="{DIM}"><i>Clipboard history is empty</i></span>']
+    else:
+        rows = [preview(i) for i in entries]
+    hint = f'<span foreground="{DIM}" size="small">Enter  copy    {KEY_FORGET}  delete</span>'
+    res = subprocess.run(
+        ["rofi", "-dmenu", "-i", "-markup-rows", "-no-custom", "-format", "i",
+         "-theme", "clipboard", "-p", ICON, "-mesg", hint, "-kb-custom-1", KEY_FORGET],
+        input="\n".join(rows), capture_output=True, text=True)
+    choice = res.stdout.strip()
+    if not entries or not choice.isdigit():
+        return
+    index = int(choice)
+    if res.returncode == FORGET:
+        copyq("remove", str(index))
+        main()  # retour à la liste
+    elif res.returncode == 0:
+        copyq("select", str(index))  # dans le presse-papier + en tête de l'historique
+
+
+if __name__ == "__main__":
+    main()

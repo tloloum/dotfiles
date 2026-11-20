@@ -1,0 +1,14 @@
+/* Historique du presse-papier ($mod+c, scripts/clipboard-menu) : même style que le lanceur */
+@import "launcher.rasi"
+
+configuration {
+    show-icons: false;
+}
+
+window   { width: 760px; }
+mainbox  { children: [ inputbar, listview, message ]; }
+entry    { placeholder: "Search clipboard"; }
+listview { lines: 12; }
+element  { padding: 7px 12px; children: [ element-text ]; }
+message  { padding: 4px 12px 0; }
+textbox  { text-color: @fg-dim; }

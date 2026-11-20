@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Démarre CopyQ (historique du presse-papier) en arrière-plan, sans icône ni fenêtre.
+# Lancé par i3 au démarrage ; l'historique s'affiche avec $mod+c (scripts/clipboard-menu).
+# Les réglages vivent dans ~/.config/copyq (hors dotfiles) : réappliqués à chaque démarrage.
+copyq --start-server >/dev/null 2>&1
+for _ in $(seq 20); do copyq count >/dev/null 2>&1 && break; sleep 0.25; done
+copyq config disable_tray true \
+             hide_main_window true \
+             autostart false \
+             check_selection false \
+             maxitems 200 >/dev/null 2>&1
