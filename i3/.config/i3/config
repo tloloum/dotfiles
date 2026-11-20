@@ -2,7 +2,7 @@
 exec --no-startup-id ~/.config/i3/scripts/touchpad
 # compositor: fades, dimmed inactive windows, rounded corners + shadows on floating windows
 exec_always --no-startup-id ~/.config/picom/launch.sh
-exec_always --no-startup-id ~/.fehbg
+exec_always --no-startup-id feh --no-fehbg --bg-fill "$HOME/dotfiles/wallpaper/HSEvAftaIAAif6d.jpeg"
 # Please see https://i3wm.org/docs/userguide.html for a complete reference!
 
 set $mod Mod4

@@ -57,7 +57,7 @@ def notify(summary, body="", urgency="normal"):
 
 def reapply_spicetify():
     """Une mise à jour de Spotify efface le thème spicetify : on le réapplique."""
-    spicetify = os.path.expanduser("~/.spicetify/spicetify")
+    spicetify = os.path.expanduser("~/.local/share/spicetify/spicetify")
     try:
         updated = "Setting up spotify-client" in open(LOG).read()
     except OSError:

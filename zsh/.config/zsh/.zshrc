@@ -6,4 +6,4 @@ source ${ZDOTDIR}/include_zsh/.alias_zsh
 source ${ZDOTDIR}/include_zsh/.hotkey
 source ${ZDOTDIR}/include_zsh/.fzf
 
-export PATH=$PATH:$HOME/.spicetify
+export PATH=$PATH:$HOME/.local/share/spicetify

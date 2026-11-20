@@ -208,7 +208,7 @@ install_alacritty_from_source() {
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal \
       || { warn "Échec installation rustup — alacritty restera en version apt."; return; }
     # shellcheck source=/dev/null
-    source "$HOME/.cargo/env"
+    source "${CARGO_HOME:-$HOME/.local/share/cargo}/env"
   fi
 
   local SRC_DIR="$HOME/.local/src/alacritty"
@@ -238,10 +238,10 @@ install_alacritty_from_source() {
 
 # ── oh-my-zsh + powerlevel10k + plugins ──────────────────────────────────────
 install_zsh_stack() {
-  local ZSH_DIR="$HOME/.oh-my-zsh"
+  local ZSH_DIR="$HOME/.local/share/oh-my-zsh"
   if [ ! -d "$ZSH_DIR" ]; then
     log "Installation de oh-my-zsh…"
-    RUNZSH=no KEEP_ZSHRC=yes CHSH=no \
+    ZSH="$ZSH_DIR" RUNZSH=no KEEP_ZSHRC=yes CHSH=no \
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   else
     log "oh-my-zsh déjà présent."
@@ -424,10 +424,10 @@ setup_gtk_dark() {
 }
 
 # ── spicetify (thème Spotify « glass ») ─────────────────────────
-# spicetify lui-même s'installe à la main (script officiel, dans ~/.spicetify).
+# spicetify lui-même s'installe à la main (script officiel, déplacé ensuite dans ~/.local/share/spicetify).
 # Ici : droits d'écriture sur Spotify, thème (paquet stow 'spicetify').
 setup_spicetify() {
-  local spicetify="$HOME/.spicetify/spicetify"
+  local spicetify="$HOME/.local/share/spicetify/spicetify"
   [ -x "$spicetify" ] || return
   [ -d /usr/share/spotify ] && sudo chgrp -R "$(id -g)" /usr/share/spotify && sudo chmod -R g+w /usr/share/spotify
   # thème glass (epxii, version assombrie — voir Themes/glass/SOURCE.md)
