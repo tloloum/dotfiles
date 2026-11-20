@@ -11,8 +11,6 @@ Relâcher Alt : rofi ignore le relâchement d'une touche dont il n'a pas vu l'ap
 (Alt est enfoncé avant son lancement). Le script surveille donc lui-même la touche
 Alt (python-xlib) et envoie Entrée à rofi dès qu'elle est relâchée.
 """
-import configparser
-import glob
 import json
 import os
 import subprocess
@@ -20,12 +18,14 @@ import sys
 import threading
 import time
 
-from Xlib import X, XK, display
-from Xlib.ext import xtest
+# Rapidité : configparser/glob (index .desktop) et python-xlib (surveillance d'Alt)
+# ne sont importés que là où ils servent — l'index est mis en cache et Xlib est
+# chargé pendant que rofi s'affiche.
 
 DESKTOP_DIRS = ["~/.local/share/applications", "/usr/share/applications",
                 "/var/lib/flatpak/exports/share/applications",
                 "~/.local/share/flatpak/exports/share/applications"]
+CACHE = os.path.expanduser("~/.cache/rofi-alttab-desktop.json")
 ITEM_WIDTH = 104  # px par icône (doit suivre alttab.rasi)
 ICONS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "icons")
 ICON_OVERRIDES = {  # classe (minuscules) → image, prioritaire sur le thème d'icônes
@@ -56,7 +56,30 @@ def windows_mru(node, in_workspace=False):
 
 
 def desktop_index():
+    """classe X11 → (nom, icône), en cache tant qu'aucune appli n'est (dés)installée."""
+    dirs = [os.path.expanduser(d) for d in DESKTOP_DIRS]
+    stamp = [os.stat(d).st_mtime if os.path.isdir(d) else 0 for d in dirs]
+    try:
+        with open(CACHE, encoding="utf-8") as f:
+            cached = json.load(f)
+        if cached["stamp"] == stamp:
+            return {k: tuple(v) for k, v in cached["index"].items()}
+    except (OSError, ValueError, KeyError):
+        pass
+    index = scan_desktop_files()
+    try:
+        os.makedirs(os.path.dirname(CACHE), exist_ok=True)
+        with open(CACHE, "w", encoding="utf-8") as f:
+            json.dump({"stamp": stamp, "index": index}, f)
+    except OSError:
+        pass
+    return index
+
+
+def scan_desktop_files():
     """classe X11 (minuscules) → (nom, icône) d'après les fichiers .desktop."""
+    import configparser
+    import glob
     index = {}
     for d in DESKTOP_DIRS:
         for path in glob.glob(os.path.join(os.path.expanduser(d), "*.desktop")):
@@ -88,6 +111,8 @@ def rofi_window_exists(dpy):
 
 def accept_on_alt_release(proc):
     """Envoie Entrée à rofi quand Alt (gauche et droit) n'est plus enfoncé."""
+    from Xlib import X, XK, display
+    from Xlib.ext import xtest
     dpy = display.Display()
     alts = [dpy.keysym_to_keycode(XK.string_to_keysym(k)) for k in ("Alt_L", "Alt_R")]
     while proc.poll() is None and not rofi_window_exists(dpy):
