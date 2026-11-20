@@ -333,7 +333,7 @@ init_submodules() {
 # une arbo $HOME), les notes à la racine, et 'chrome' (Firefox, géré à part par
 # deploy_firefox car le nom de profil est aléatoire → pas stowable).
 STOW_PACKAGES=(
-  alacritty autostart btop dunst eww fastfetch flameshot gtk i3 i3status neofetch nvim polybar picom ranger rofi script theme vim xdg zsh
+  alacritty autostart btop dunst eww fastfetch flameshot gtk i3 i3status neofetch nvim polybar picom ranger rofi script spicetify theme vim xdg zsh
 )
 
 run_stow() {
@@ -423,6 +423,19 @@ setup_gtk_dark() {
   gsettings set org.gnome.desktop.interface gtk-theme 'Mint-Y-Dark-Grey'
 }
 
+# ── spicetify (thème Spotify « noir » + extensions) ─────────────────────────
+# spicetify lui-même s'installe à la main (script officiel, dans ~/.spicetify).
+# Ici : droits d'écriture sur Spotify, thème (paquet stow 'spicetify'), extensions.
+setup_spicetify() {
+  local spicetify="$HOME/.spicetify/spicetify"
+  [ -x "$spicetify" ] || return
+  [ -d /usr/share/spotify ] && sudo chgrp -R "$(id -g)" /usr/share/spotify && sudo chmod -R g+w /usr/share/spotify
+  "$spicetify" config current_theme noir color_scheme noir \
+    extensions fullAppDisplay.js extensions keyboardShortcut.js extensions shuffle+.js \
+    extensions popupLyrics.js extensions trashbin.js
+  "$spicetify" backup apply || warn "spicetify : 'spicetify backup apply' a échoué — relance-le à la main."
+}
+
 # ── wallpaper : rien à stow, on rappelle juste où il est ─────────────────────
 notice_wallpaper() {
   log "Fond d'écran disponible : $DOTFILES/wallpaper/foret.jpg"
@@ -449,6 +462,7 @@ install_nvim_toolchain
 setup_zsh_env
 run_stow
 setup_gtk_dark
+setup_spicetify
 deploy_firefox
 notice_wallpaper
 

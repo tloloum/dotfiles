@@ -6,6 +6,9 @@
   1. apt-get update          → progression 0-10 %
   2. apt-get full-upgrade    → téléchargement 10-40 %, installation 40-100 %
   3. flatpak update          (seulement si des applis flatpak sont installées)
+  4. Spotify mis à jour      → droits d'écriture rendus au groupe de l'utilisateur sur
+                               /usr/share/spotify (pour spicetify, réappliqué côté
+                               utilisateur par updates.py)
 
 La progression vient d'apt lui-même (APT::Status-Fd : lignes « dlstatus » /
 « pmstatus » avec un pourcentage) et est écrite dans PROGRESS_FILE sous la forme
@@ -60,6 +63,24 @@ def run_apt(args, log, ranges):
     return proc.wait()
 
 
+def spotify_updated():
+    try:
+        return "Setting up spotify-client" in open(LOG).read()
+    except OSError:
+        return False
+
+
+def give_spotify_back():
+    """apt remet /usr/share/spotify à root : spicetify ne pourrait plus y écrire."""
+    import pwd
+    uid = int(os.environ.get("PKEXEC_UID", "0"))
+    if uid == 0 or not os.path.isdir("/usr/share/spotify"):
+        return
+    gid = pwd.getpwuid(uid).pw_gid
+    subprocess.run(["chgrp", "-R", str(gid), "/usr/share/spotify"])
+    subprocess.run(["chmod", "-R", "g+w", "/usr/share/spotify"])
+
+
 def main():
     with open(LOG, "w") as log:
         give_back(LOG)
@@ -77,6 +98,8 @@ def main():
             progress("flatpak", 99)
             code = subprocess.run(["flatpak", "update", "-y", "--noninteractive"],
                                   stdout=log, stderr=subprocess.STDOUT).returncode
+    if spotify_updated():
+        give_spotify_back()
     progress("done" if code == 0 else "failed", 100 if code == 0 else code)
 
 

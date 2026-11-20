@@ -4,12 +4,14 @@
   au repos      : icône + nombre de mises à jour apt (recompté toutes les 30 min,
                   ou tout de suite sur clic droit : SIGUSR1)
   en cours      : barre de progression lue dans PROGRESS (écrit par system-update)
-  à la fin      : notification succès/erreur, puis recompte
+  à la fin      : notification succès/erreur, puis recompte ; si Spotify a été mis
+                  à jour, le thème spicetify est réappliqué (spicetify backup apply)
 """
 import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 
 sys.path.insert(0, os.path.expanduser("~/.config/theme"))
@@ -53,6 +55,22 @@ def notify(summary, body="", urgency="normal"):
     subprocess.run(["notify-send", "-a", "system-update", "-u", urgency, summary, body])
 
 
+def reapply_spicetify():
+    """Une mise à jour de Spotify efface le thème spicetify : on le réapplique."""
+    spicetify = os.path.expanduser("~/.spicetify/spicetify")
+    try:
+        updated = "Setting up spotify-client" in open(LOG).read()
+    except OSError:
+        updated = False
+    if not (updated and os.path.exists(spicetify)):
+        return
+    res = subprocess.run([spicetify, "backup", "apply"], capture_output=True, text=True)
+    if res.returncode == 0:
+        notify("Spotify updated", "spicetify theme re-applied")
+    else:
+        notify("Spotify updated", "spicetify backup apply failed — run it manually", "critical")
+
+
 def read_progress():
     try:
         phase, value = open(PROGRESS).read().split()
@@ -71,6 +89,8 @@ def main():
             os.remove(PROGRESS)
             if state[0] == "done":
                 notify("System up to date")
+                # ~20 s (et redémarre Spotify) : en parallèle pour ne pas figer le module
+                threading.Thread(target=reapply_spicetify, daemon=True).start()
             else:
                 notify("System update failed", f"exit code {state[1]} — see {LOG}", "critical")
             recount_requested, state = True, None
