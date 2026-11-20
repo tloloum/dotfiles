@@ -10,6 +10,7 @@ Fichiers générés (inclus par la config de chaque outil, ne pas les éditer) :
   eww/.config/eww/_colors.scss                  @import de eww.scss
   dunst/.config/dunst/dunstrc.d/colors.conf     complète dunstrc
   i3/.config/i3/colors                          include de la config i3
+  btop/.config/btop/themes/noir.theme           color_theme de btop.conf
   theme/.config/theme/colors.sh                 pour les scripts shell
 Les scripts Python lisent directement colors.json (voir palette.py).
 """
@@ -100,6 +101,51 @@ client.focused_inactive {c['surface_low']} {c['surface_low']} {c['fg']} {c['wind
 client.unfocused        {c['bg']} {c['bg']} {c['fg_dim']} {c['window_inactive']}   {c['window_inactive']}
 client.urgent           {c['alert']} {c['alert']} {c['bg']} {c['alert']}   {c['alert']}
 client.background       {c['bg']}
+""")
+
+write("btop/.config/btop/themes/noir.theme", f"""# {HEADER}
+theme[main_bg]="{c['bg']}"
+theme[main_fg]="{c['fg']}"
+theme[title]="{c['accent']}"
+theme[hi_fg]="{c['accent']}"
+theme[selected_bg]="{c['surface']}"
+theme[selected_fg]="{c['accent']}"
+theme[inactive_fg]="{c['fg_dim']}"
+theme[graph_text]="{c['fg_dim']}"
+theme[meter_bg]="{c['surface']}"
+theme[proc_misc]="{c['fg_dim']}"
+theme[cpu_box]="{c['border']}"
+theme[mem_box]="{c['border']}"
+theme[net_box]="{c['border']}"
+theme[proc_box]="{c['border']}"
+theme[div_line]="{c['surface']}"
+theme[temp_start]="{c['fg_dim']}"
+theme[temp_mid]="{c['warn']}"
+theme[temp_end]="{c['alert']}"
+theme[cpu_start]="{c['fg_dim']}"
+theme[cpu_mid]="{c['warn']}"
+theme[cpu_end]="{c['alert']}"
+theme[free_start]="{c['surface']}"
+theme[free_mid]="{c['fg_dim']}"
+theme[free_end]="{c['fg']}"
+theme[cached_start]="{c['surface']}"
+theme[cached_mid]="{c['fg_dim']}"
+theme[cached_end]="{c['fg']}"
+theme[available_start]="{c['surface']}"
+theme[available_mid]="{c['fg_dim']}"
+theme[available_end]="{c['success']}"
+theme[used_start]="{c['fg_dim']}"
+theme[used_mid]="{c['warn']}"
+theme[used_end]="{c['alert']}"
+theme[download_start]="{c['surface']}"
+theme[download_mid]="{c['fg_dim']}"
+theme[download_end]="{c['accent']}"
+theme[upload_start]="{c['surface']}"
+theme[upload_mid]="{c['fg_dim']}"
+theme[upload_end]="{c['accent']}"
+theme[process_start]="{c['fg_dim']}"
+theme[process_mid]="{c['warn']}"
+theme[process_end]="{c['alert']}"
 """)
 
 write("theme/.config/theme/colors.sh", f"# {HEADER}\n" + "".join(
