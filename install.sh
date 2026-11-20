@@ -38,7 +38,7 @@ APT_PACKAGES=(
   neovim vim ranger
   # environnement graphique i3
   i3 i3status i3lock picom feh network-manager-gnome polybar pavucontrol
-  rofi dunst flameshot btop libnotify-bin papirus-icon-theme python3-xlib policykit-1-gnome
+  rofi dunst flameshot btop fastfetch libnotify-bin papirus-icon-theme python3-xlib policykit-1-gnome
   # popup média de polybar : eww (compilé, voir install_eww) + lecteur/visualiseur
   playerctl cava libgtk-3-dev libdbusmenu-gtk3-dev libpango1.0-dev libgdk-pixbuf-2.0-dev
   pulseaudio-utils brightnessctl suckless-tools
@@ -82,6 +82,13 @@ install_apt() {
       sudo add-apt-repository -y ppa:git-core/ppa \
         && need_update=1 \
         || warn "Impossible d'ajouter le PPA git-core — git risque d'être trop ancien."
+    fi
+    # fastfetch (remplaçant de neofetch) : absent des dépôts Ubuntu 24.04 → PPA du projet
+    if ! grep -rq "zhangsongcui3371/fastfetch" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+      log "Ajout du PPA fastfetch…"
+      sudo add-apt-repository -y ppa:zhangsongcui3371/fastfetch \
+        && need_update=1 \
+        || warn "Impossible d'ajouter le PPA fastfetch — le fetch au lancement de zsh ne s'affichera pas."
     fi
     [ "$need_update" -eq 1 ] && sudo apt-get update -qq
   else
@@ -326,7 +333,7 @@ init_submodules() {
 # une arbo $HOME), les notes à la racine, et 'chrome' (Firefox, géré à part par
 # deploy_firefox car le nom de profil est aléatoire → pas stowable).
 STOW_PACKAGES=(
-  alacritty autostart btop dunst eww flameshot i3 i3status neofetch nvim polybar ranger rofi script theme vim xdg zsh
+  alacritty autostart btop dunst eww fastfetch flameshot i3 i3status neofetch nvim polybar ranger rofi script theme vim xdg zsh
 )
 
 run_stow() {

@@ -1,4 +1,4 @@
-neofetch
+fastfetch
 
 source ${ZDOTDIR}/include_zsh/.omz
 source ${ZDOTDIR}/include_zsh/.env_var

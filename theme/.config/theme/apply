@@ -11,6 +11,7 @@ Fichiers générés (inclus par la config de chaque outil, ne pas les éditer) :
   dunst/.config/dunst/dunstrc.d/colors.conf     complète dunstrc
   i3/.config/i3/colors                          include de la config i3
   btop/.config/btop/themes/noir.theme           color_theme de btop.conf
+  fastfetch/.config/fastfetch/config.jsonc      config complète de fastfetch
   theme/.config/theme/colors.sh                 pour les scripts shell
 Les scripts Python lisent directement colors.json (voir palette.py).
 """
@@ -146,6 +147,40 @@ theme[upload_end]="{c['accent']}"
 theme[process_start]="{c['fg_dim']}"
 theme[process_mid]="{c['warn']}"
 theme[process_end]="{c['alert']}"
+""")
+
+write("fastfetch/.config/fastfetch/config.jsonc", f"""// {HEADER}
+{{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {{
+    "color": {{ "1": "{c['accent']}", "2": "{c['fg_dim']}" }},
+    "padding": {{ "right": 3 }}
+  }},
+  "display": {{
+    "separator": "  ",
+    "color": {{ "keys": "{c['fg_dim']}", "title": "{c['accent']}", "separator": "{c['border']}" }},
+    "key": {{ "width": 10 }}
+  }},
+  "modules": [
+    "title",
+    {{ "type": "separator", "string": "─" }},
+    {{ "type": "os",       "key": "os" }},
+    {{ "type": "kernel",   "key": "kernel" }},
+    {{ "type": "uptime",   "key": "uptime" }},
+    {{ "type": "packages", "key": "packages" }},
+    {{ "type": "shell",    "key": "shell" }},
+    {{ "type": "wm",       "key": "wm" }},
+    {{ "type": "terminal", "key": "terminal" }},
+    "break",
+    {{ "type": "cpu",      "key": "cpu" }},
+    {{ "type": "gpu",      "key": "gpu" }},
+    {{ "type": "memory",   "key": "memory" }},
+    {{ "type": "disk",     "key": "disk", "folders": "/" }},
+    {{ "type": "battery",  "key": "battery" }},
+    "break",
+    {{ "type": "colors",   "symbol": "circle" }}
+  ]
+}}
 """)
 
 write("theme/.config/theme/colors.sh", f"# {HEADER}\n" + "".join(
