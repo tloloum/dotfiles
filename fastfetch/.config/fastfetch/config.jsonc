@@ -2,7 +2,10 @@
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "logo": {
-    "color": { "1": "#e6e6e6", "2": "#6e6e6e" },
+    "type": "file-raw",
+    "source": "~/.config/fastfetch/blackhole.ans",
+    "width": 40,
+    "height": 13,
     "padding": { "right": 3 }
   },
   "display": {
