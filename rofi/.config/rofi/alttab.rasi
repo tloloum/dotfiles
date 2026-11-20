@@ -1,0 +1,26 @@
+/* Alt+Tab (scripts/alttab) : bande d'icônes centrée, même style que le lanceur */
+@import "launcher.rasi"
+
+configuration {
+    show-icons: true;
+}
+
+window   { padding: 16px; }
+mainbox  { children: [ listview ]; }
+listview {
+    lines:        1;
+    layout:       vertical;
+    flow:         horizontal;
+    fixed-height: true;
+    scrollbar:    false;
+    spacing:      8px;
+}
+element {
+    orientation:   vertical;
+    padding:       12px 8px 10px;
+    spacing:       8px;
+    border-radius: 8px;
+    children:      [ element-icon, element-text ];
+}
+element-icon { size: 48px; horizontal-align: 0.5; }
+element-text { horizontal-align: 0.5; font: "CaskaydiaCove Nerd Font 9"; }
