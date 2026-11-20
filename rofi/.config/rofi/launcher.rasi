@@ -1,0 +1,48 @@
+/* Lanceur d'applications ($mod+space) : rofi drun, fenêtre centrée, icônes Papirus-Dark */
+@import "noir.rasi"
+
+configuration {
+    modi:                "drun";
+    show-icons:          true;
+    icon-theme:          "Papirus-Dark";
+    drun-display-format: "{name}";
+    display-drun:        "󰍉";
+    matching:            "fuzzy";
+}
+
+window {
+    location:      center;
+    anchor:        center;
+    width:         560px;
+    padding:       18px;
+    border:        1px;
+    border-color:  @bg-alt;
+    border-radius: 10px;
+}
+
+mainbox  { children: [ inputbar, listview ]; spacing: 14px; }
+
+inputbar {
+    padding:       10px 14px;
+    spacing:       12px;
+    border-radius: 8px;
+}
+prompt   { font: "CaskaydiaCove Nerd Font 13"; text-color: @fg-dim; }
+entry    {
+    font:              "CaskaydiaCove Nerd Font 12";
+    placeholder:       "Search applications";
+    placeholder-color: @fg-dim;
+    vertical-align:    0.5;
+}
+
+listview { lines: 8; columns: 1; spacing: 4px; }
+
+element {
+    padding:       8px 12px;
+    spacing:       14px;
+    border-radius: 6px;
+    children:      [ element-icon, element-text ];
+}
+element-icon { size: 28px; }
+element-text { vertical-align: 0.5; }
+element selected { background-color: @bg-alt; text-color: @accent; }
