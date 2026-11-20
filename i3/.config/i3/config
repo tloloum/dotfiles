@@ -191,5 +191,8 @@ mode "resize" {
 }
 
 bindsym $mod+r mode "resize"
+# Terminal ouvert par le menu wifi (Show WiFi password + QR code) : fenêtre flottante
+for_window [class="^wifi-float$"] floating enable, resize set 620 640, move position center
+
 # Barre : polybar (config dans ~/.config/polybar, relancée à chaque restart d'i3 : $mod+Shift+r)
 exec_always --no-startup-id ~/.config/polybar/launch.sh

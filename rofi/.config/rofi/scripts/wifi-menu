@@ -1,0 +1,260 @@
+#!/usr/bin/env python3
+"""Menu wifi rofi + nmcli, ouvert depuis l'icône réseau de polybar.
+
+  en-tête   : réseau connecté en gras (ou « No connection » / « WiFi disabled »)
+  liste     : réseaux scannés, connus d'abord puis par signal ;
+              icône de signal, cadenas si sécurisé, marque-page si déjà connu
+  actions   : Rescan WiFi, Show WiFi password (QR code de nmcli), Disable WiFi
+  Alt+d     : oublier le réseau sélectionné (s'il est enregistré)
+
+Choisir un réseau s'y connecte : profil enregistré si connu, sinon demande du
+mot de passe (réseau sécurisé) puis création du profil.
+"""
+import html
+import subprocess
+import sys
+
+THEME = "wifi"  # ~/.config/rofi/wifi.rasi
+TERMINAL = ["alacritty", "--class", "wifi-float"]  # flottant via règle i3
+DIM = "#6e6e6e"  # = fg-dim du thème
+KEY_FORGET = "Alt+d"
+
+SIGNAL_ICONS = ["\U000F092F", "\U000F091F", "\U000F0922", "\U000F0925", "\U000F0928"]
+ICON_OFF = "\U000F05AA"
+ICON_KNOWN = "\uf02e"  # marque-page : réseau déjà enregistré
+ICON_LOCK = "\uf023"
+ICON_TRASH = "\U000F01B4"
+ICON_ETH = "\U000F0200"
+ICON_RESCAN = "\U000F0450"
+ICON_QR = "\U000F0432"
+ICON_POWER = "\U000F0425"
+
+
+# ── nmcli ────────────────────────────────────────────────────────────────────
+def nmcli(*args, check=False):
+    return subprocess.run(["nmcli", *args], capture_output=True, text=True, check=check)
+
+
+def split_terse(line):
+    """Découpe une ligne `nmcli -t` (les ':' internes sont échappés en '\\:')."""
+    fields, cur, esc = [], "", False
+    for ch in line:
+        if esc:
+            cur, esc = cur + ch, False
+        elif ch == "\\":
+            esc = True
+        elif ch == ":":
+            fields.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    fields.append(cur)
+    return fields
+
+
+def scan(rescan=False):
+    """Réseaux visibles, un par SSID (meilleur signal), triés par signal."""
+    out = nmcli("-t", "-f", "IN-USE,SSID,SECURITY,SIGNAL", "dev", "wifi", "list",
+                "--rescan", "yes" if rescan else "no").stdout
+    best = {}
+    for line in out.splitlines():
+        in_use, ssid, sec, signal = split_terse(line)
+        if not ssid:  # réseau caché
+            continue
+        ap = {"ssid": ssid, "sec": sec or "", "signal": int(signal or 0), "active": in_use == "*"}
+        prev = best.get(ssid)
+        if prev is None or ap["signal"] > prev["signal"] or ap["active"]:
+            ap["active"] = ap["active"] or (prev or {}).get("active", False)
+            best[ssid] = ap
+    return list(best.values())
+
+
+def known_profiles():
+    """{ssid: nom du profil} pour les connexions wifi enregistrées."""
+    out = nmcli("-t", "-f", "NAME,UUID,TYPE", "con", "show").stdout
+    known = {}
+    for line in out.splitlines():
+        name, uuid, ctype = split_terse(line)
+        if ctype != "802-11-wireless":
+            continue
+        ssid = nmcli("-g", "802-11-wireless.ssid", "con", "show", uuid).stdout.strip()
+        known[ssid or name] = name
+    return known
+
+
+def wifi_enabled():
+    return nmcli("radio", "wifi").stdout.strip() == "enabled"
+
+
+def active_connection():
+    """(nom, type) de la connexion active principale (wifi ou filaire), sinon None."""
+    out = nmcli("-t", "-f", "NAME,TYPE", "con", "show", "--active").stdout
+    for wanted in ("802-11-wireless", "802-3-ethernet"):
+        for line in out.splitlines():
+            name, ctype = split_terse(line)
+            if ctype == wanted:
+                return name, ctype
+    return None
+
+
+# ── rofi ─────────────────────────────────────────────────────────────────────
+FORGET = 10  # code de sortie de rofi pour -kb-custom-1
+
+
+def rofi(rows, prompt, mesg="", active=None, password=False, header=None):
+    """Lance rofi. Renvoie (code, sortie) ; code None si Échap.
+
+    header : ligne non sélectionnable placée en tête (index 0 dans la sortie).
+    """
+    cmd = ["rofi", "-dmenu", "-i", "-theme", THEME, "-p", prompt]
+    if password:
+        cmd += ["-password", "-theme-str", "listview { lines: 0; }"]
+    else:
+        cmd += ["-markup-rows", "-no-custom", "-format", "i", "-kb-custom-1", KEY_FORGET]
+    if mesg:
+        cmd += ["-mesg", mesg]
+    if header is not None:
+        rows = [header + "\0nonselectable\x1ftrue"] + rows
+        active = None if active is None else active + 1
+        cmd += ["-selected-row", "1"]  # curseur sur la 1re vraie ligne, pas sur l'en-tête
+    if active is not None:
+        cmd += ["-a", str(active)]
+    res = subprocess.run(cmd, input="\n".join(rows), capture_output=True, text=True)
+    if res.returncode not in (0, FORGET):  # Échap
+        return None, None
+    out = res.stdout.rstrip("\n")
+    if header is not None and out.isdigit():
+        out = str(int(out) - 1)
+    return res.returncode, out
+
+
+def notify(summary, body="", urgency="normal"):
+    subprocess.run(["notify-send", "-a", "wifi-menu", "-u", urgency, summary, body])
+
+
+def esc(text):
+    return html.escape(text, quote=False)
+
+
+# ── actions ──────────────────────────────────────────────────────────────────
+def connect(ap, known):
+    ssid = ap["ssid"]
+    if ap["active"]:
+        return
+    if ssid in known:
+        res = nmcli("con", "up", "id", known[ssid])
+    else:
+        args = ["dev", "wifi", "connect", ssid]
+        if ap["sec"]:
+            _, pw = rofi([], ICON_LOCK, mesg=f"Password for <b>{esc(ssid)}</b>", password=True)
+            if not pw:
+                return
+            args += ["password", pw]
+        res = nmcli(*args)
+        if res.returncode != 0:
+            # nmcli crée le profil même si l'authentification échoue : on le retire
+            nmcli("con", "delete", "id", ssid)
+    if res.returncode == 0:
+        notify(f"Connected to {ssid}")
+    else:
+        notify(f"Failed to connect to {ssid}", res.stderr.strip(), urgency="critical")
+
+
+def forget(ssid, profile):
+    """Confirmation puis suppression du profil enregistré."""
+    _, choice = rofi([f"{ICON_TRASH}  Forget", "Cancel"], ICON_TRASH,
+                     header=f"Forget <b>{esc(ssid)}</b> ?")
+    if choice != "0":
+        return
+    res = nmcli("con", "delete", "id", profile)
+    if res.returncode == 0:
+        notify(f"Forgot {ssid}")
+    else:
+        notify(f"Failed to forget {ssid}", res.stderr.strip(), urgency="critical")
+
+
+def toggle_wifi(enable):
+    nmcli("radio", "wifi", "on" if enable else "off")
+    notify("WiFi enabled" if enable else "WiFi disabled")
+
+
+def show_password():
+    # `nmcli dev wifi show-password` affiche aussi le QR code en ASCII
+    subprocess.Popen(TERMINAL + ["-e", "sh", "-c",
+                                 "nmcli dev wifi show-password; printf '\\nPress any key…'; "
+                                 "stty -echo -icanon; dd bs=1 count=1 >/dev/null 2>&1"])
+
+
+# ── menu ─────────────────────────────────────────────────────────────────────
+def main(rescan=False):
+    if not wifi_enabled():
+        _, choice = rofi([f"{ICON_POWER}  Enable WiFi"], ICON_OFF,
+                         header=f"{ICON_OFF}  <i>WiFi disabled</i>")
+        if choice == "0":
+            toggle_wifi(True)
+        return
+
+    if rescan:
+        notify("Scanning WiFi…")
+    aps = scan(rescan)
+    known = known_profiles()
+    current = active_connection()
+    # actif, puis connus, puis par signal
+    aps.sort(key=lambda a: (not a["active"], a["ssid"] not in known, -a["signal"]))
+
+    if current:
+        name, ctype = current
+        if ctype == "802-11-wireless":
+            ap = next((a for a in aps if a["active"]), None)
+            icon = SIGNAL_ICONS[min(ap["signal"] // 20, 4)] if ap else SIGNAL_ICONS[4]
+        else:
+            icon = ICON_ETH
+        header = f"{icon}  <b>{esc(name)}</b>"
+    else:
+        header = f"{ICON_OFF}  <i>No connection</i>"
+
+    width = max((len(a["ssid"]) for a in aps), default=0)
+    rows, actions, active_idx = [], [], None
+    for ap in aps:
+        icon = SIGNAL_ICONS[min(ap["signal"] // 20, 4)]
+        lock = ICON_LOCK if ap["sec"] else " "
+        mark = ICON_KNOWN if ap["ssid"] in known else " "
+        rows.append(f"{icon}  {esc(ap['ssid'].ljust(width))}  "
+                    f'<span foreground="{DIM}">{lock} {mark}</span>')
+        actions.append(("connect", ap))
+        if ap["active"]:
+            active_idx = len(rows) - 1
+
+    rows.append(f"{ICON_RESCAN}  Rescan WiFi")
+    actions.append(("rescan", None))
+    if current and current[1] == "802-11-wireless":
+        rows.append(f"{ICON_QR}  Show WiFi password")
+        actions.append(("password", None))
+    rows.append(f"{ICON_POWER}  Disable WiFi")
+    actions.append(("disable", None))
+
+    # rappel du raccourci seulement s'il y a un réseau oubliable dans la liste
+    hint = ""
+    if any(a["ssid"] in known for a in aps):
+        hint = f'<span foreground="{DIM}" size="small">{KEY_FORGET}  forget network</span>'
+
+    code, choice = rofi(rows, "\U000F05A9", mesg=hint, active=active_idx, header=header)
+    if not choice or not choice.isdigit():
+        return
+    kind, ap = actions[int(choice)]
+    if code == FORGET:
+        if kind == "connect" and ap["ssid"] in known:
+            forget(ap["ssid"], known[ap["ssid"]])
+        main()  # retour au menu (après oubli, ou Alt+d sur une ligne non concernée)
+    elif kind == "connect":
+        connect(ap, known)
+    elif kind == "rescan":
+        main(rescan=True)
+    elif kind == "password":
+        show_password()
+    elif kind == "disable":
+        toggle_wifi(False)
+
+
+if __name__ == "__main__":
+    main(rescan="--rescan" in sys.argv)

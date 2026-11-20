@@ -1,0 +1,17 @@
+/* Menu wifi (scripts/wifi-menu) : thème noir, ancré sous l'icône wifi de polybar */
+@import "noir.rasi"
+
+window {
+    location: northeast;
+    anchor:   northeast;
+    x-offset: -260px;
+    y-offset: 36px;
+    width:    440px;
+}
+listview { lines: 12; }
+
+/* en-tête = 1re ligne (non sélectionnable) ; zone de message en bas = rappel des raccourcis */
+mainbox      { children: [ inputbar, listview, message ]; }
+message      { padding: 2px 10px 0; }
+/* police Mono : icônes sur une seule cellule → colonnes (cadenas, marque-page) alignées */
+element-text { font: "CaskaydiaCove Nerd Font Mono 10"; }
