@@ -1,5 +1,6 @@
 exec --no-startup-id xinput set-prop "FTCS0038:00 2808:0101 Touchpad" "libinput Natural Scrolling Enabled" 1
-exec_always --no-startup-id picom # pr la transparence
+# compositor: fades, dimmed inactive windows, rounded corners + shadows on floating windows
+exec_always --no-startup-id ~/.config/picom/launch.sh
 exec --no-startup-id xinput set-prop "FTCS0038:00 2808:0101 Touchpad" "libinput Scrolling Pixel Distance" 25
 exec_always --no-startup-id ~/.fehbg
 # Please see https://i3wm.org/docs/userguide.html for a complete reference!
