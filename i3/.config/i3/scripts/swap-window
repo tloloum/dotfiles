@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""Déplace la fenêtre active en l'échangeant avec sa voisine à l'écran.
+
+  swap-window left|right|up|down
+
+Avec autotiling, les fenêtres finissent dans des conteneurs imbriqués et le
+`move` d'i3 les fait sortir d'un niveau à la fois (rien de visible, ou un saut
+inattendu). Ici la voisine est trouvée d'après la position réelle des fenêtres
+et les deux sont échangées : la disposition reste la même, le focus suit.
+Pas de voisine (bord de l'écran) ou fenêtre flottante : `move` classique.
+"""
+import json
+import subprocess
+import sys
+
+DIRECTIONS = ("left", "right", "up", "down")
+
+
+def i3(*args):
+    return subprocess.run(["i3-msg", *args], capture_output=True, text=True).stdout
+
+
+def find_focused_workspace(node, workspace=None):
+    if node.get("type") == "workspace":
+        workspace = node
+    if node.get("focused"):
+        return node, workspace
+    for child in node.get("nodes", []) + node.get("floating_nodes", []):
+        found = find_focused_workspace(child, workspace)
+        if found:
+            return found
+    return None
+
+
+def visible_windows(node):
+    """Fenêtres tuilées visibles (dans un conteneur à onglets : seulement l'onglet affiché)."""
+    if node.get("window"):
+        return [node]
+    children = node.get("nodes", [])
+    if node.get("layout") in ("tabbed", "stacked") and children:
+        shown = next((c for c in children if node.get("focus") and c["id"] == node["focus"][0]),
+                     children[0])
+        children = [shown]
+    result = []
+    for child in children:
+        result += visible_windows(child)
+    return result
+
+
+def neighbour(focused, candidates, direction):
+    """Fenêtre la plus proche dans la direction, qui chevauche l'autre axe."""
+    f = focused["rect"]
+    fx2, fy2 = f["x"] + f["width"], f["y"] + f["height"]
+    best, best_key = None, None
+    for c in candidates:
+        if c["id"] == focused["id"]:
+            continue
+        r = c["rect"]
+        rx2, ry2 = r["x"] + r["width"], r["y"] + r["height"]
+        if direction in ("left", "right"):
+            overlap = min(fy2, ry2) - max(f["y"], r["y"])
+            gap = f["x"] - rx2 if direction == "left" else r["x"] - fx2
+            center = abs((r["y"] + ry2) - (f["y"] + fy2))
+        else:
+            overlap = min(fx2, rx2) - max(f["x"], r["x"])
+            gap = f["y"] - ry2 if direction == "up" else r["y"] - fy2
+            center = abs((r["x"] + rx2) - (f["x"] + fx2))
+        if overlap <= 0 or gap < -10:  # pas en face, ou pas du bon côté (-10 : bordures/gaps)
+            continue
+        key = (gap, -overlap, center)
+        if best_key is None or key < best_key:
+            best, best_key = c, key
+    return best
+
+
+def main():
+    direction = sys.argv[1] if len(sys.argv) > 1 else ""
+    if direction not in DIRECTIONS:
+        sys.exit(f"usage: {sys.argv[0]} {'|'.join(DIRECTIONS)}")
+    found = find_focused_workspace(json.loads(i3("-t", "get_tree")))
+    if not found or not found[0].get("window") or found[1] is None:
+        i3("move", direction)
+        return
+    focused, workspace = found
+    if focused.get("floating", "").endswith("_on"):
+        i3("move", direction)
+        return
+    target = neighbour(focused, visible_windows(workspace), direction)
+    if target is None:
+        i3("move", direction)  # bord de l'écran : comportement i3 normal
+        return
+    i3(f"[con_id={focused['id']}]", "swap", "container", "with", "con_id", str(target["id"]))
+    i3(f"[con_id={focused['id']}]", "focus")
+
+
+if __name__ == "__main__":
+    main()
