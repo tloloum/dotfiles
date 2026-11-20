@@ -4,6 +4,11 @@
   audio.py                 flux JSON (deflisten `audio`), mis à jour via `pactl subscribe`
   audio.py set-sink NAME   change la sortie par défaut et y déplace les sons en cours
   audio.py set-source NAME change le micro par défaut et y déplace les enregistrements
+  audio.py toggle-bt-profile  casque Bluetooth : haute qualité (A2DP) <-> mode appel (HSP/HFP)
+
+Mode appel = micro du casque actif, mais son mono 16 kHz (limite du Bluetooth
+classique). WirePlumber y bascule tout seul quand une appli ouvre le micro du
+casque et n'en revient pas toujours : le bouton du popup permet de revenir.
 """
 import json
 import subprocess
@@ -47,10 +52,40 @@ def devices(kind):
     return items, current
 
 
+def bt_card(sink_name):
+    """Carte Bluetooth de la sortie (bluez_output.<MAC>.N → bluez_card.<MAC>), sinon None."""
+    if not sink_name or not sink_name.startswith("bluez_output."):
+        return None
+    name = "bluez_card." + sink_name.split(".")[1]
+    return next((c for c in pactl_json("list", "cards") if c["name"] == name), None)
+
+
+def bt_mode(card):
+    active = (card or {}).get("active_profile", "")
+    if active.startswith("a2dp"):
+        return "hifi"
+    if active.startswith("headset"):
+        return "call"
+    return ""
+
+
+def toggle_bt_profile():
+    card = bt_card(pactl("get-default-sink").strip())
+    if not card:
+        return
+    family = "headset" if bt_mode(card) == "hifi" else "a2dp"
+    candidates = [(p.get("priority", 0), name) for name, p in card["profiles"].items()
+                  if name.startswith(family) and p.get("available", True)]
+    if candidates:
+        pactl("set-card-profile", card["name"], max(candidates)[1])  # meilleur codec dispo
+
+
 def state():
     sinks, sink = devices("sink")
     sources, source = devices("source")
+    card = bt_card(sink["name"]) if sink else None
     return {
+        "bt_mode": bt_mode(card),  # "hifi" | "call" | "" (pas un casque Bluetooth)
         "volume": sink["volume"] if sink else 0,
         "muted": sink["muted"] if sink else True,
         "sink": sink["desc"] if sink else "No output",
@@ -73,7 +108,7 @@ def listen():
         line = next(lines, None)
         if line is None:
             return
-        while not any(k in line for k in ("sink", "source", "server")):
+        while not any(k in line for k in ("sink", "source", "server", "card")):
             line = next(lines, None)
             if line is None:
                 return
@@ -90,5 +125,7 @@ def move_to(kind, name):
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] in ("set-sink", "set-source"):
         move_to(sys.argv[1].split("-")[1], sys.argv[2])
+    elif len(sys.argv) == 2 and sys.argv[1] == "toggle-bt-profile":
+        toggle_bt_profile()
     else:
         listen()

@@ -6,7 +6,7 @@
   "python3 -u ~/.config/eww/scripts/player.py")
 
 (deflisten audio
-  :initial '{"volume":0,"muted":false,"sink":"","sinks":[],"source":"","mic_muted":false,"sources":[]}'
+  :initial '{"bt_mode":"","volume":0,"muted":false,"sink":"","sinks":[],"source":"","mic_muted":false,"sources":[]}'
   "python3 -u ~/.config/eww/scripts/audio.py")
 
 (deflisten bars :initial "" "~/.config/eww/scripts/visualizer.sh")
@@ -77,6 +77,16 @@
           (label :class {audio.mic_muted ? "dev-icon muted" : "dev-icon"}
                  :text {audio.mic_muted ? "󰍭" : "󰍬"})
           (label :limit-width 16 :text {audio.source}))))
+    ;; casque Bluetooth : haute qualité (A2DP) <-> mode appel (micro du casque, son mono 16 kHz)
+    (button :class {audio.bt_mode == "call" ? "dev profile call" : "dev profile"}
+            :visible {audio.bt_mode != ""}
+            :onclick "python3 ~/.config/eww/scripts/audio.py toggle-bt-profile"
+      (box :space-evenly false :spacing 8
+        (label :class "dev-icon" :text {audio.bt_mode == "call" ? "󰏲" : "󰋋"})
+        (label :hexpand true :halign "start"
+               :text {audio.bt_mode == "call" ? "Call mode · mono 16 kHz" : "High quality · stereo"})
+        (label :class "hint"
+               :text {audio.bt_mode == "call" ? "switch to high quality" : "switch to call mode"})))
     (revealer :reveal show_sinks :transition "slidedown" :duration "150ms"
       (box :class "devlist" :orientation "v"
         (for s in {audio.sinks}

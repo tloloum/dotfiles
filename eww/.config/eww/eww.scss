@@ -5,6 +5,7 @@ $fg: #bdbdbd;
 $dim: #6e6e6e;
 $accent: #e6e6e6;
 $alert: #c4605a;
+$warn: #c9a35c;
 
 * {
   all: unset;
@@ -81,3 +82,8 @@ scale slider {
 .devitem.current { color: $accent; }
 // Mono : la coche et l'espace des appareils non actifs ont la même largeur → noms alignés
 .devitem label { font-family: "CaskaydiaCove Nerd Font Mono"; }
+
+// casque Bluetooth : bouton haute qualité / mode appel
+.profile .hint { color: $dim; font-size: 11px; }
+.profile.call { color: $warn; }
+.profile.call .hint { color: $dim; }
