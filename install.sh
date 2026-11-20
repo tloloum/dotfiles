@@ -333,7 +333,7 @@ init_submodules() {
 # une arbo $HOME), les notes à la racine, et 'chrome' (Firefox, géré à part par
 # deploy_firefox car le nom de profil est aléatoire → pas stowable).
 STOW_PACKAGES=(
-  alacritty autostart btop dunst eww fastfetch flameshot i3 i3status neofetch nvim polybar ranger rofi script theme vim xdg zsh
+  alacritty autostart btop dunst eww fastfetch flameshot gtk i3 i3status neofetch nvim polybar ranger rofi script theme vim xdg zsh
 )
 
 run_stow() {
@@ -414,6 +414,15 @@ deploy_firefox() {
   fi
 }
 
+# ── thème GTK sombre (applis GTK 4 / libadwaita, sélecteur de fichiers) ─────
+# Les applis GTK 2/3 lisent les fichiers stowés du paquet 'gtk' ; GTK 4 et le
+# portail suivent la préférence de GNOME (dconf, pas un fichier stowable).
+setup_gtk_dark() {
+  command -v gsettings >/dev/null || return
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  gsettings set org.gnome.desktop.interface gtk-theme 'Mint-Y-Dark-Grey'
+}
+
 # ── wallpaper : rien à stow, on rappelle juste où il est ─────────────────────
 notice_wallpaper() {
   log "Fond d'écran disponible : $DOTFILES/wallpaper/foret.jpg"
@@ -439,6 +448,7 @@ install_zsh_stack
 install_nvim_toolchain
 setup_zsh_env
 run_stow
+setup_gtk_dark
 deploy_firefox
 notice_wallpaper
 
