@@ -44,6 +44,16 @@ opt.fillchars:append({
 	verthoriz = "╋",
 })
 
+vim.filetype.add({
+	extension = {
+		vs = "glsl",
+		fs = "glsl",
+		gs = "glsl",
+		tcs = "glsl",
+		tes = "glsl",
+	},
+})
+
 vim.diagnostic.config({
 	signs = {
 		text = {

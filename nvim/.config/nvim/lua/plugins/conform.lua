@@ -19,14 +19,16 @@ return {
 				typescriptreact = { "prettier" },
 				cpp = { "clang_format" },
 				c = { "clang_format" },
+				glsl = { "clang_format" },
 				cmake = { "gersemi" },
 				tex = { "tex-fmt" },
+				yaml = { "prettier" },
 			},
 
 			format_on_save = {
 				lsp_fallback = true,
 				async = false,
-				timeout_ms = 1000,
+				timeout_ms = 3000,
 			},
 		})
 
@@ -34,7 +36,7 @@ return {
 			conform.format({
 				lsp_format = "fallback",
 				async = false,
-				timeout_ms = 1000,
+				timeout_ms = 3000,
 			})
 		end, { desc = "Format file or range (in visual mode)" })
 	end,

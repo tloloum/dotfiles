@@ -30,6 +30,8 @@ vim.api.nvim_create_autocmd('LspAttach', {
 			vim.lsp.inlay_hint.enable(false, { bufnr = ev.buf })
 		end
 
+		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { buffer = ev.buf, desc = 'Go to definition' })
+
 		vim.keymap.set('n', '<leader>th', function()
 			vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = ev.buf }), { bufnr = ev.buf })
 		end, { buffer = ev.buf, desc = 'Toggle Inlay Hints' })

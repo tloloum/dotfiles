@@ -10,6 +10,8 @@ return {
 				"gitignore",
 				"c",
 				"cpp",
+				"glsl",
+				"cmake",
 				"lua",
 				"markdown",
 				"markdown_inline",

@@ -6,4 +6,6 @@ vim.lsp.enable({
 	"clangd",
 	"bashls",
 	"pyright",
+	"glsl_analyzer",
+	"neocmake",
 })
