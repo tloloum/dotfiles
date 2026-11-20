@@ -423,16 +423,16 @@ setup_gtk_dark() {
   gsettings set org.gnome.desktop.interface gtk-theme 'Mint-Y-Dark-Grey'
 }
 
-# ── spicetify (thème Spotify « noir » + extensions) ─────────────────────────
+# ── spicetify (thème Spotify « glass ») ─────────────────────────
 # spicetify lui-même s'installe à la main (script officiel, dans ~/.spicetify).
-# Ici : droits d'écriture sur Spotify, thème (paquet stow 'spicetify'), extensions.
+# Ici : droits d'écriture sur Spotify, thème (paquet stow 'spicetify').
 setup_spicetify() {
   local spicetify="$HOME/.spicetify/spicetify"
   [ -x "$spicetify" ] || return
   [ -d /usr/share/spotify ] && sudo chgrp -R "$(id -g)" /usr/share/spotify && sudo chmod -R g+w /usr/share/spotify
-  "$spicetify" config current_theme noir color_scheme noir \
-    extensions fullAppDisplay.js extensions keyboardShortcut.js extensions shuffle+.js \
-    extensions popupLyrics.js extensions trashbin.js
+  # thème glass (epxii, version assombrie — voir Themes/glass/SOURCE.md)
+  "$spicetify" config current_theme glass color_scheme Dark \
+    inject_css 1 replace_colors 1 overwrite_assets 1 inject_theme_js 1
   "$spicetify" backup apply || warn "spicetify : 'spicetify backup apply' a échoué — relance-le à la main."
 }
 
