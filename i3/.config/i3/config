@@ -182,6 +182,10 @@ bindsym $mod+t exec alacritty -e htop
 # system settings
 bindsym $mod+p exec cinnamon-settings
 
+# screenshot: area + annotation (Print) / full screen copied & saved (Shift+Print)
+bindsym Print exec --no-startup-id mkdir -p ~/Pictures/Screenshots && flameshot gui -p ~/Pictures/Screenshots
+bindsym Shift+Print exec --no-startup-id mkdir -p ~/Pictures/Screenshots && flameshot full -c -p ~/Pictures/Screenshots
+
 # lock the screen
 bindsym $mod+shift+x exec --no-startup-id ~/.config/i3/lock.sh
 

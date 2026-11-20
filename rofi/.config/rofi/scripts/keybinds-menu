@@ -29,7 +29,7 @@ KEYS = {
     "underscore": "_", "ccedilla": "ç", "agrave": "à",
     "xf86audioraisevolume": "Vol+", "xf86audiolowervolume": "Vol−",
     "xf86audiomute": "Mute", "xf86audiomicmute": "MicMute",
-    "xf86monbrightnessup": "Bright+", "xf86monbrightnessdown": "Bright−",
+    "print": "PrtSc", "xf86monbrightnessup": "Bright+", "xf86monbrightnessdown": "Bright−",
 }
 
 
