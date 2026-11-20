@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+"""$mod+Shift+space : bascule la fenêtre active entre tuilée et flottante.
+
+En passant en flottant, la fenêtre est centrée à une taille confortable
+(60 % × 70 % de l'écran) au lieu de garder sa taille de tuile.
+i3 ne sait pas faire « si flottante alors … sinon … » dans une seule commande
+(les critères sont réévalués après chaque commande), d'où ce petit script.
+"""
+import json
+import subprocess
+
+
+def focused(node):
+    if node.get("focused"):
+        return node
+    for child in node.get("nodes", []) + node.get("floating_nodes", []):
+        found = focused(child)
+        if found:
+            return found
+    return None
+
+
+tree = json.loads(subprocess.run(["i3-msg", "-t", "get_tree"], capture_output=True, text=True).stdout)
+win = focused(tree)
+if win and win.get("window"):
+    if win.get("floating", "").endswith("_on"):
+        subprocess.run(["i3-msg", "floating disable"], capture_output=True)
+    else:
+        subprocess.run(["i3-msg", "floating enable, resize set 60 ppt 70 ppt, move position center"],
+                       capture_output=True)

@@ -117,8 +117,8 @@ bindsym $mod+f fullscreen toggle
 bindsym $mod+z exec --no-startup-id ~/.config/i3/scripts/tab-workspace
 bindsym $mod+s layout toggle split
 
-# toggle tiling / floating
-# bindsym $mod+Shift+space floating toggle
+# toggle tiling / floating (centered at 60% x 70% of the screen when floating)
+bindsym $mod+Shift+space exec --no-startup-id ~/.config/i3/scripts/toggle-float
 
 # change focus between tiling / floating windows
 # bindsym $mod+space focus mode_toggle
