@@ -37,11 +37,13 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.config/i3/lock.sh
 # and nm-applet is a desktop environment-independent system tray GUI for it.
 exec --no-startup-id nm-applet
 
-# Use pactl to adjust volume in PulseAudio.
+# volume / mute (pactl)
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10%
 bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10%
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
 bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+# screen brightness
 bindsym XF86MonBrightnessUp   exec --no-startup-id brightnessctl set +5%
 bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 
@@ -58,8 +60,7 @@ bindsym $mod+Return exec alacritty
 # kill focused window
 bindsym $mod+q kill
 
-# lanceur d'applications : rofi centré avec icônes (thème ~/.config/rofi/launcher.rasi)
-# re-appui sur $mod+space : le referme
+# application launcher (rofi, theme ~/.config/rofi/launcher.rasi) — press again to close
 bindsym $mod+space exec --no-startup-id pkill -x rofi || rofi -show drun -theme launcher
 
 # change focus
@@ -156,9 +157,13 @@ bindsym $mod+Shift+r restart
 # exit i3 (logs you out of your X session)
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 
-#htop 
+# htop (system monitor)
 bindsym $mod+t exec alacritty -e htop
+
+# system settings
 bindsym $mod+p exec cinnamon-settings
+
+# lock the screen
 bindsym $mod+shift+x exec --no-startup-id ~/.config/i3/lock.sh
 
 # resize window (you can also use the mouse for that)
@@ -186,7 +191,9 @@ mode "resize" {
         bindsym $mod+r mode "default"
 }
 
+# resize mode
 bindsym $mod+r mode "resize"
+
 # Terminal ouvert par le menu wifi (Show WiFi password + QR code) : fenêtre flottante
 for_window [class="^wifi-float$"] floating enable, resize set 620 640, move position center
 

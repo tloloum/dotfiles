@@ -1,0 +1,15 @@
+/* Récap des raccourcis i3 (scripts/keybinds-menu) : même style que le lanceur, sans icônes */
+@import "launcher.rasi"
+
+configuration {
+    show-icons:    false;
+    /* défilement continu (ligne par ligne) au lieu de pages entières */
+    scroll-method: 1;
+}
+
+window   { width: 1000px; }
+entry    { placeholder: "Search shortcuts"; }
+listview { lines: 16; scrollbar: false; }
+element  { padding: 6px 12px; children: [ element-text ]; }
+/* Mono : colonnes touches / description / commande alignées */
+element-text { font: "CaskaydiaCove Nerd Font Mono 10"; }

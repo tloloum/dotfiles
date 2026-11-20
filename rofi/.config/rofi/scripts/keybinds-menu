@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""Récap des raccourcis i3, généré à partir de ~/.config/i3/config (rien en dur).
+
+  - description = bloc de commentaires juste au-dessus d'un groupe de bindsym
+    (jusqu'à la ligne vide suivante) ; à défaut, déduite de la commande
+  - raccourcis similaires fusionnés : $mod+h/j/k/l, workspaces 1…10…
+  - modes (resize…) préfixés par leur nom
+Ouvert depuis l'icône clavier de polybar ; même style que le lanceur ($mod+space).
+"""
+import os
+import re
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True  # pas de __pycache__ dans les dotfiles
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from menulib import DIM, esc  # noqa: E402
+
+CONFIG = os.path.expanduser("~/.config/i3/config")
+ICON = "\U000F030C"  # clavier
+
+MODIFIERS = {"mod4": "Super", "mod1": "Alt", "shift": "Shift", "ctrl": "Ctrl",
+             "control": "Ctrl", "mod3": "Mod3", "mod5": "AltGr"}
+KEYS = {
+    "return": "Enter", "escape": "Esc", "space": "Space", "tab": "Tab",
+    "left": "←", "right": "→", "up": "↑", "down": "↓",
+    "ampersand": "&", "eacute": "é", "quotedbl": '"', "apostrophe": "'",
+    "parenleft": "(", "parenright": ")", "minus": "-", "egrave": "è",
+    "underscore": "_", "ccedilla": "ç", "agrave": "à",
+    "xf86audioraisevolume": "Vol+", "xf86audiolowervolume": "Vol−",
+    "xf86audiomute": "Mute", "xf86audiomicmute": "MicMute",
+    "xf86monbrightnessup": "Bright+", "xf86monbrightnessdown": "Bright−",
+}
+
+
+def parse(path):
+    """Liste de (mode, modificateurs, touche, commande, description)."""
+    variables, binds = {}, []
+    comment, mode, after_bind, last_desc = [], None, False, ""
+    for raw in open(path, encoding="utf-8"):
+        line = raw.strip()
+        if not line:
+            comment, after_bind = [], False
+            continue
+        if line.startswith("#"):
+            text = line.lstrip("#").strip()
+            if after_bind:  # commentaire après un bindsym : nouveau bloc
+                comment, after_bind = [], False
+            # un bindsym commenté n'est pas une description
+            if text and not re.match(r"(bindsym|bindcode|exec)\b", text):
+                comment.append(text)
+            continue
+        m = re.match(r"set\s+(\$\w+)\s+(.+)", line)
+        if m:
+            variables[m.group(1)] = m.group(2).strip('"')
+            continue
+        m = re.match(r'mode\s+"([^"]+)"\s*\{', line)
+        if m:
+            mode, comment = m.group(1), []
+            continue
+        if line == "}":
+            mode, comment = None, []
+            continue
+        m = re.match(r"bindsym\s+(?:--\S+\s+)*(\S+)\s+(.+)", line)
+        if not m:
+            comment = []
+            continue
+        combo, command = m.group(1), m.group(2)
+        for var, value in sorted(variables.items(), key=lambda kv: -len(kv[0])):
+            combo, command = combo.replace(var, value), command.replace(var, value)
+        *mods, key = combo.split("+")
+        mods = tuple(MODIFIERS.get(x.lower(), x) for x in mods)
+        desc = short(comment[0]) if comment and mode is None else ""
+        if re.match(r"(alternatively|same bindings)", desc, re.I):
+            desc = last_desc  # « alternatively, the cursor keys » : même action que le bloc précédent
+        last_desc, after_bind = desc or last_desc, True
+        binds.append((mode, mods, key, command, desc))
+    return binds
+
+
+def short(text):
+    """« Lanceur : détails (thème…) » → « Lanceur » ; retire parenthèses et point final."""
+    text = re.sub(r"\s*\([^)]*\)", "", text).split(" : ")[0].split(": ")[0].split(" — ")[0]
+    return text.rstrip(". ").strip()
+
+
+def pretty_key(key):
+    return KEYS.get(key.lower(), key.upper() if len(key) == 1 else key)
+
+
+def clean(command):
+    command = re.sub(r"--no-startup-id\s+", "", command)
+    return re.sub(r"\s+", " ", command).strip()
+
+
+def describe(command):
+    """Description de secours quand la config n'a pas de commentaire."""
+    m = re.match(r'mode\s+"?([^"]+)"?', command)
+    if m:
+        return "Back to normal mode" if m.group(1) == "default" else f"Enter {m.group(1)} mode"
+    if command.startswith("resize"):
+        return "Resize the window"
+    return command
+
+
+def merge(binds):
+    """Fusionne les raccourcis voisins qui ne diffèrent que par la touche et le dernier mot."""
+    rows = []
+    for mode, mods, key, command, desc in binds:
+        cmd = clean(command)
+        head, _, tail = cmd.rpartition(" ")
+        prev = rows[-1] if rows else None
+        same_group = prev and prev["mode"] == mode and prev["mods"] == mods and prev["desc"] == desc
+        if same_group and desc and prev["head"] == head and head:
+            prev["keys"].append(pretty_key(key))
+            prev["tails"].append(tail)
+            continue
+        if same_group and mode and cmd.split()[0] == prev["cmd"].split()[0]:
+            prev["keys"].append(pretty_key(key))
+            prev["merged_cmd"] = True
+            continue
+        rows.append({"mode": mode, "mods": mods, "desc": desc, "head": head,
+                     "keys": [pretty_key(key)], "tails": [tail], "cmd": cmd})
+    return rows
+
+
+def render(row):
+    keys = "/".join(row["keys"])
+    combo = " + ".join(row["mods"] + (keys,))
+    if row["mode"]:
+        combo = f"[{row['mode']}] {combo}"
+    if row.get("merged_cmd"):
+        cmd = row["cmd"].split()[0] + " …"
+    elif len(row["keys"]) > 1:
+        tails = row["tails"]
+        span = "/".join(tails) if len(tails) <= 4 else f"{tails[0]}…{tails[-1]}"
+        cmd = f"{row['head']} {span}"
+    else:
+        cmd = row["cmd"]
+    desc = row["desc"] or describe(row["cmd"])
+    return combo, desc[:1].upper() + desc[1:], cmd
+
+
+def main():
+    entries = [render(r) for r in merge(parse(CONFIG))]
+    width = max(len(c) for c, _, _ in entries)
+    dwidth = min(max(len(d) for _, d, _ in entries), 48)
+    lines = []
+    for combo, desc, cmd in entries:
+        if len(desc) > dwidth:
+            desc = desc[:dwidth - 1] + "…"
+        if len(cmd) > 44:
+            cmd = cmd[:43] + "…"
+        lines.append(f"<b>{esc(combo.ljust(width))}</b>  {esc(desc.ljust(dwidth))}  "
+                     f'<span foreground="{DIM}">{esc(cmd)}</span>')
+    subprocess.run(["rofi", "-dmenu", "-i", "-markup-rows", "-no-custom",
+                    "-theme", "keybinds", "-p", ICON],
+                   input="\n".join(lines), text=True, capture_output=True)
+
+
+if __name__ == "__main__":
+    if "--print" in sys.argv:  # aperçu texte, sans rofi
+        for c, d, cmd in (render(r) for r in merge(parse(CONFIG))):
+            print(f"{c:32} {d:40} {cmd}")
+    else:
+        main()
