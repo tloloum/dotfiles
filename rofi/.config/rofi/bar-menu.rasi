@@ -4,7 +4,7 @@
 window {
     location: northeast;
     anchor:   northeast;
-    x-offset: -260px;
+    x-offset: -8px;
     y-offset: 36px;
     width:    440px;
 }

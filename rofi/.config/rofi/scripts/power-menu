@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Menu d'alimentation rofi, ouvert depuis l'icône power de polybar (tout à droite).
+
+  Lock      : ~/.config/i3/lock.sh (i3lock-color)
+  Reboot    : confirmation puis systemctl reboot
+  Shutdown  : confirmation puis systemctl poweroff
+"""
+import os
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True  # pas de __pycache__ dans les dotfiles
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from menulib import ICON_POWER, esc, rofi  # noqa: E402
+
+ICON_LOCK = "\U000F033E"
+ICON_REBOOT = "\U000F0709"
+LOCK = os.path.expanduser("~/.config/i3/lock.sh")
+# menu étroit, collé au bord droit sous l'icône
+THEME = "window { width: 220px; } listview { lines: 3; }"
+
+ACTIONS = [
+    (f"{ICON_LOCK}  Lock", None, [LOCK]),
+    (f"{ICON_REBOOT}  Reboot", "Reboot", ["systemctl", "reboot"]),
+    (f"{ICON_POWER}  Shut down", "Shut down", ["systemctl", "poweroff"]),
+]
+
+
+def confirm(what):
+    _, choice = rofi([f"{ICON_POWER}  {what}", "Cancel"], ICON_POWER,
+                     header=f"<b>{esc(what)}</b> ?", theme_str=THEME)
+    return choice == "0"
+
+
+def main():
+    _, choice = rofi([label for label, _, _ in ACTIONS], ICON_POWER, theme_str=THEME)
+    if not choice or not choice.isdigit():
+        return
+    _, ask, cmd = ACTIONS[int(choice)]
+    if ask and not confirm(ask):
+        return
+    # détaché : lock.sh tourne en --nofork jusqu'au déverrouillage
+    subprocess.Popen(cmd, start_new_session=True)
+
+
+if __name__ == "__main__":
+    main()

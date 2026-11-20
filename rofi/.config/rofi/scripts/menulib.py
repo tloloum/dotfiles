@@ -36,12 +36,15 @@ def forget_hint():
     return f'<span foreground="{DIM}" size="small">{KEY_FORGET}  forget</span>'
 
 
-def rofi(rows, prompt, mesg="", active=None, password=False, header=None):
+def rofi(rows, prompt, mesg="", active=None, password=False, header=None, theme_str=None):
     """Lance rofi. Renvoie (code, index choisi en str) ; (None, None) si Échap.
 
     header : ligne non sélectionnable placée en tête (absente des index renvoyés).
+    theme_str : surcharge du thème propre à un menu (taille, position…).
     """
     cmd = ["rofi", "-dmenu", "-i", "-theme", THEME, "-p", prompt]
+    if theme_str:
+        cmd += ["-theme-str", theme_str]
     if password:
         cmd += ["-password", "-theme-str", "listview { lines: 0; }"]
     else:
