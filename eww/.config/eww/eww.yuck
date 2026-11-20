@@ -99,3 +99,31 @@
           (button :class {s.default ? "devitem current" : "devitem"}
                   :onclick "python3 ~/.config/eww/scripts/audio.py set-source '${s.name}'; eww update show_sources=false"
             (label :halign "start" :text "${s.default ? '󰄬' : ' '}  ${s.desc}")))))))
+
+;; ── popup CPU : charge par cœur virtuel, façon htop (scripts/toggle-cpu.sh) ──
+;; nb de cœurs et modèle lus sur la machine ; colonnes de 8 cœurs (8 → 1 col, 24 → 3)
+(deflisten cpu
+  :initial '{"total":0,"count":0,"model":"","columns":[]}'
+  "python3 -u ~/.config/eww/scripts/cpu.py")
+
+(defwindow cpu
+  ;; ancre en haut à droite, x négatif = vers la gauche (≈ sous la stat CPU du tiroir)
+  :monitor 0
+  :geometry (geometry :x "-420px" :y "38px" :anchor "top right")
+  :stacking "fg"
+  :wm-ignore true
+  (box :class "cpu" :orientation "v" :space-evenly false :spacing 12
+    (box :class "cpu-head" :space-evenly false :spacing 10
+      (label :class "cpu-icon" :text "")
+      (label :class "cpu-total" :text "${cpu.total}%")
+      (label :class "cpu-model" :hexpand true :halign "end" :limit-width 40
+             :text "${cpu.count} threads · ${cpu.model}"))
+    (box :class "cpu-cols" :space-evenly true :spacing 22
+      (for col in {cpu.columns}
+        (box :orientation "v" :space-evenly false :spacing 5
+          (for core in col
+            (box :class "core" :space-evenly false :spacing 10
+              (label :class "core-id" :xalign 1 :text "${core.id}")
+              (progress :class {core.pct >= 85 ? "core-bar high" : core.pct >= 60 ? "core-bar mid" : "core-bar"}
+                        :hexpand true :valign "center" :value {core.pct})
+              (label :class "core-pct" :xalign 1 :text "${core.pct}%"))))))))

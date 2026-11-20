@@ -38,7 +38,7 @@ APT_PACKAGES=(
   neovim vim ranger
   # environnement graphique i3
   i3 i3status i3lock picom feh network-manager-gnome polybar pavucontrol
-  rofi libnotify-bin papirus-icon-theme python3-xlib
+  rofi libnotify-bin papirus-icon-theme python3-xlib policykit-1-gnome
   # popup média de polybar : eww (compilé, voir install_eww) + lecteur/visualiseur
   playerctl cava libgtk-3-dev libdbusmenu-gtk3-dev libpango1.0-dev libgdk-pixbuf-2.0-dev
   pulseaudio-utils brightnessctl suckless-tools

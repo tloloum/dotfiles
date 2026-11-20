@@ -48,6 +48,9 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.config/i3/lock.sh
 # and nm-applet is a desktop environment-independent system tray GUI for it.
 exec --no-startup-id nm-applet
 
+# polkit agent: graphical password prompt for admin actions (e.g. polybar update button)
+exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+
 # volume / mute (pactl)
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10%
 bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10%
@@ -212,6 +215,9 @@ bindsym $mod+r mode "resize"
 
 # Terminal ouvert par le menu wifi (Show WiFi password + QR code) : fenêtre flottante
 for_window [class="^wifi-float$"] floating enable, resize set 620 640, move position center
+
+# Log window of the system update (polybar update button): floating
+for_window [class="^update-float$"] floating enable, resize set 900 560, move position center
 
 # Barre : polybar (config dans ~/.config/polybar, relancée à chaque restart d'i3 : $mod+Shift+r)
 exec_always --no-startup-id ~/.config/polybar/launch.sh

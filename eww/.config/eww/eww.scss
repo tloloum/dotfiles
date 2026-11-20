@@ -87,3 +87,23 @@ scale slider {
 .profile .hint { color: $dim; font-size: 11px; }
 .profile.call { color: $warn; }
 .profile.call .hint { color: $dim; }
+
+// ── popup CPU (façon htop)
+.cpu {
+  min-width: 360px;
+  background-color: rgba(11, 11, 11, 0.96);
+  border: 1px solid $bg-alt;
+  padding: 14px 16px;
+  color: $fg;
+}
+.cpu-icon { font-size: 16px; color: $dim; }
+.cpu-total { color: $accent; font-weight: bold; font-size: 15px; }
+.cpu-model { color: $dim; font-size: 11px; }
+.core { font-family: "CaskaydiaCove Nerd Font Mono"; font-size: 11px; }
+.core-id { color: $dim; min-width: 18px; }
+.core-pct { min-width: 34px; }
+.core-bar { min-width: 140px; }
+.core-bar trough { min-height: 6px; border-radius: 3px; background-color: $bg-alt; }
+.core-bar progress { min-height: 6px; border-radius: 3px; background-color: $fg; }
+.core-bar.mid progress { background-color: $warn; }
+.core-bar.high progress { background-color: $alert; }

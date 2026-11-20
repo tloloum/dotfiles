@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""Mise à jour système, lancée en root via pkexec par le bouton polybar.
+
+  system-update PROGRESS_FILE LOG_FILE
+
+  1. apt-get update          → progression 0-10 %
+  2. apt-get full-upgrade    → téléchargement 10-40 %, installation 40-100 %
+  3. flatpak update          (seulement si des applis flatpak sont installées)
+
+La progression vient d'apt lui-même (APT::Status-Fd : lignes « dlstatus » /
+« pmstatus » avec un pourcentage) et est écrite dans PROGRESS_FILE sous la forme
+« phase pourcentage » ; updates.py (côté utilisateur) l'affiche dans la barre.
+Fin : « done 100 » ou « failed <code> ». Journal complet dans LOG_FILE.
+Non interactif : fichiers de config modifiés localement conservés (confold).
+"""
+import os
+import subprocess
+import sys
+
+PROGRESS, LOG = sys.argv[1], sys.argv[2]
+ENV = dict(os.environ, DEBIAN_FRONTEND="noninteractive", LC_ALL="C")
+DPKG_OPTS = ["-o", "Dpkg::Options::=--force-confdef", "-o", "Dpkg::Options::=--force-confold"]
+
+
+def give_back(path):
+    """Les fichiers créés en root restent lisibles/supprimables par l'utilisateur."""
+    uid = int(os.environ.get("PKEXEC_UID", "0"))
+    try:
+        os.chown(path, uid, uid)
+    except OSError:
+        pass
+
+
+def progress(phase, percent):
+    tmp = PROGRESS + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(f"{phase} {int(percent)}\n")
+    give_back(tmp)
+    os.replace(tmp, PROGRESS)
+
+
+def run_apt(args, log, ranges):
+    """Lance apt-get avec Status-Fd ; ranges = {"dlstatus": (a, b), "pmstatus": (a, b)}."""
+    read_fd, write_fd = os.pipe()
+    cmd = ["apt-get", "-o", f"APT::Status-Fd={write_fd}", *args]
+    proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, env=ENV, pass_fds=(write_fd,))
+    os.close(write_fd)
+    with os.fdopen(read_fd) as status:
+        for line in status:
+            kind, _, rest = line.partition(":")
+            if kind not in ranges:
+                continue
+            try:
+                percent = float(rest.split(":")[1])
+            except (IndexError, ValueError):
+                continue
+            low, high = ranges[kind]
+            phase = "download" if kind == "dlstatus" and high > 10 else ("install" if kind == "pmstatus" else "refresh")
+            progress(phase, low + (high - low) * percent / 100)
+    return proc.wait()
+
+
+def main():
+    with open(LOG, "w") as log:
+        give_back(LOG)
+        log.write("== apt-get update\n"); log.flush()
+        progress("refresh", 0)
+        code = run_apt(["update"], log, {"dlstatus": (0, 10)})
+        if code == 0:
+            log.write("\n== apt-get full-upgrade\n"); log.flush()
+            progress("download", 10)
+            code = run_apt(["-y", *DPKG_OPTS, "full-upgrade"], log,
+                           {"dlstatus": (10, 40), "pmstatus": (40, 100)})
+        if code == 0 and subprocess.run(["flatpak", "list", "--app"], capture_output=True,
+                                        text=True).stdout.strip():
+            log.write("\n== flatpak update\n"); log.flush()
+            progress("flatpak", 99)
+            code = subprocess.run(["flatpak", "update", "-y", "--noninteractive"],
+                                  stdout=log, stderr=subprocess.STDOUT).returncode
+    progress("done" if code == 0 else "failed", 100 if code == 0 else code)
+
+
+if __name__ == "__main__":
+    main()
