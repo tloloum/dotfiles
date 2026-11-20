@@ -1,11 +1,5 @@
-// Thème du popup média — mêmes couleurs que polybar ([colors]) et rofi (noir.rasi)
-$bg: #0b0b0b;
-$bg-alt: #1e1e1e;
-$fg: #bdbdbd;
-$dim: #6e6e6e;
-$accent: #e6e6e6;
-$alert: #c4605a;
-$warn: #c9a35c;
+// Popups eww — couleurs : _colors.scss, généré depuis ~/.config/theme/colors.json
+@import "colors";
 
 * {
   all: unset;
@@ -14,7 +8,7 @@ $warn: #c9a35c;
 }
 
 .media {
-  background-color: rgba(11, 11, 11, 0.96);
+  background-color: $bg-translucent;
   border: 1px solid $bg-alt;
   padding: 16px;
   color: $fg;
@@ -91,7 +85,7 @@ scale slider {
 // ── popup CPU (façon htop)
 .cpu {
   min-width: 360px;
-  background-color: rgba(11, 11, 11, 0.96);
+  background-color: $bg-translucent;
   border: 1px solid $bg-alt;
   padding: 14px 16px;
   color: $fg;

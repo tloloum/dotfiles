@@ -1,0 +1,18 @@
+{
+  "_doc": "Palette unique du rice. Modifier ici puis lancer ~/.config/theme/apply (génère les fichiers de couleurs de polybar, rofi, eww, dunst, i3 et recharge tout).",
+  "bg":            "#0b0b0b",
+  "bg_opacity":    0.95,
+  "surface":       "#1e1e1e",
+  "surface_low":   "#161616",
+  "surface_high":  "#2a2a2a",
+  "border":        "#3a3a3a",
+  "fg":            "#bdbdbd",
+  "fg_dim":        "#6e6e6e",
+  "accent":        "#e6e6e6",
+  "alert":         "#c4605a",
+  "warn":          "#c9a35c",
+  "success":       "#8fa37e",
+  "window_focused":   "#F0C674",
+  "window_indicator": "#8ABEB7",
+  "window_inactive":  "#373B41"
+}

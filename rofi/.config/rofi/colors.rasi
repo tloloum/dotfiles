@@ -1,0 +1,10 @@
+/* généré par ~/.config/theme/apply depuis colors.json — ne pas éditer */
+* {
+    bg:          #0b0b0bf2;
+    bg-alt:      #1e1e1e;
+    bg-low:      #161616;
+    fg:          #bdbdbd;
+    fg-dim:      #6e6e6e;
+    accent:      #e6e6e6;
+    urgent:      #c4605a;
+}

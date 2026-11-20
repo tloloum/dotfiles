@@ -9,7 +9,11 @@
 import os
 import signal
 import subprocess
+import sys
 import time
+
+sys.path.insert(0, os.path.expanduser("~/.config/theme"))
+from palette import C  # noqa: E402  (palette du rice)
 
 RUNTIME = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
 PROGRESS = os.path.join(RUNTIME, "system-update.progress")
@@ -17,7 +21,7 @@ LOG = os.path.expanduser("~/.cache/system-update.log")
 RECOUNT_EVERY = 30 * 60
 
 ICON = "\U000F06B0"
-DIM, WARN, ACCENT, ALERT = "#6e6e6e", "#c9a35c", "#e6e6e6", "#c4605a"
+DIM, WARN, ACCENT, ALERT = C["fg_dim"], C["warn"], C["accent"], C["alert"]
 BAR_WIDTH = 10
 
 recount_requested = True

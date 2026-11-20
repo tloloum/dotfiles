@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Applique la palette colors.json à tout le rice.
+
+  ~/.config/theme/apply            génère les fichiers de couleurs puis recharge
+  ~/.config/theme/apply --no-reload génère seulement
+
+Fichiers générés (inclus par la config de chaque outil, ne pas les éditer) :
+  polybar/.config/polybar/colors.ini            include-file de config.ini
+  rofi/.config/rofi/colors.rasi                 @import de noir.rasi
+  eww/.config/eww/_colors.scss                  @import de eww.scss
+  dunst/.config/dunst/dunstrc.d/colors.conf     complète dunstrc
+  i3/.config/i3/colors                          include de la config i3
+  theme/.config/theme/colors.sh                 pour les scripts shell
+Les scripts Python lisent directement colors.json (voir palette.py).
+"""
+import json
+import os
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+DOTFILES = os.path.normpath(os.path.join(HERE, "..", "..", ".."))
+HEADER = "généré par ~/.config/theme/apply depuis colors.json — ne pas éditer"
+
+c = {k: v for k, v in json.load(open(os.path.join(HERE, "colors.json"))).items() if not k.startswith("_")}
+alpha = round(c["bg_opacity"] * 255)
+bg_rgb = tuple(int(c["bg"][i:i + 2], 16) for i in (1, 3, 5))
+
+
+def write(rel, text):
+    path = os.path.join(DOTFILES, rel)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(text)
+    print("  ", rel)
+
+
+write("polybar/.config/polybar/colors.ini", f"""; {HEADER}
+[colors]
+background = {c['bg']}
+background-transparent = #{alpha:02X}{c['bg'][1:]}
+background-alt = {c['surface']}
+foreground = {c['fg']}
+primary = {c['fg_dim']}
+secondary = {c['accent']}
+success = {c['success']}
+alert = {c['alert']}
+warn = {c['warn']}
+disabled = {c['border']}
+""")
+
+write("rofi/.config/rofi/colors.rasi", f"""/* {HEADER} */
+* {{
+    bg:          {c['bg']}{alpha:02x};
+    bg-alt:      {c['surface']};
+    bg-low:      {c['surface_low']};
+    fg:          {c['fg']};
+    fg-dim:      {c['fg_dim']};
+    accent:      {c['accent']};
+    urgent:      {c['alert']};
+}}
+""")
+
+write("eww/.config/eww/_colors.scss", f"""// {HEADER}
+$bg: {c['bg']};
+$bg-translucent: rgba({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]}, {c['bg_opacity']});
+$bg-alt: {c['surface']};
+$fg: {c['fg']};
+$dim: {c['fg_dim']};
+$accent: {c['accent']};
+$alert: {c['alert']};
+$warn: {c['warn']};
+""")
+
+write("dunst/.config/dunst/dunstrc.d/colors.conf", f"""# {HEADER}
+[urgency_low]
+    background = "{c['bg']}"
+    foreground = "{c['fg_dim']}"
+    frame_color = "{c['surface']}"
+    highlight = "{c['fg_dim']}"
+
+[urgency_normal]
+    background = "{c['bg']}"
+    foreground = "{c['fg']}"
+    frame_color = "{c['border']}"
+    highlight = "{c['accent']}"
+
+[urgency_critical]
+    background = "{c['bg']}"
+    foreground = "{c['accent']}"
+    frame_color = "{c['alert']}"
+    highlight = "{c['alert']}"
+""")
+
+write("i3/.config/i3/colors", f"""# {HEADER}
+# border/bg/text = tabs · indicator/child_border = window borders
+# class                 border  bg      text    indicator child_border
+client.focused          {c['surface_high']} {c['surface']} {c['accent']} {c['window_indicator']}   {c['window_focused']}
+client.focused_inactive {c['surface_low']} {c['surface_low']} {c['fg']} {c['window_inactive']}   {c['window_inactive']}
+client.unfocused        {c['bg']} {c['bg']} {c['fg_dim']} {c['window_inactive']}   {c['window_inactive']}
+client.urgent           {c['alert']} {c['alert']} {c['bg']} {c['alert']}   {c['alert']}
+client.background       {c['bg']}
+""")
+
+write("theme/.config/theme/colors.sh", f"# {HEADER}\n" + "".join(
+    f"THEME_{k.upper()}='{v}'\n" for k, v in c.items()))
+
+
+def reload_all():
+    def quiet(*cmd):
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    quiet("i3-msg", "reload")
+    quiet("eww", "reload")
+    # polybar relancé par son launch.sh (protégé contre un polybar figé) plutôt que
+    # « polybar-msg cmd restart », qui peut bloquer s'il rechargeait déjà sa config
+    subprocess.Popen([os.path.expanduser("~/.config/polybar/launch.sh")],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    # dunst 1.9 ne relit pas sa config à chaud : on le relance (détaché)
+    quiet("pkill", "-x", "dunst")
+    subprocess.Popen(["dunst"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     start_new_session=True)
+
+
+if "--no-reload" not in sys.argv:
+    reload_all()

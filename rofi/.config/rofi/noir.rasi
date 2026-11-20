@@ -1,12 +1,7 @@
-/* Thème rofi noir, assorti à polybar (mêmes couleurs que [colors] de polybar/config.ini) */
-* {
-    bg:      #0b0b0bf2;
-    bg-alt:  #1e1e1e;
-    fg:      #bdbdbd;
-    fg-dim:  #6e6e6e;
-    accent:  #e6e6e6;
-    urgent:  #c4605a;
+/* Thème rofi noir — couleurs : colors.rasi, généré depuis ~/.config/theme/colors.json */
+@import "colors.rasi"
 
+* {
     background-color: transparent;
     text-color:       @fg;
     font:             "CaskaydiaCove Nerd Font 10";
@@ -43,7 +38,7 @@ listview {
 element               { padding: 5px 10px; cursor: pointer; }
 element-text          { text-color: inherit; background-color: inherit; cursor: inherit; }
 element-icon          { size: 1em; background-color: inherit; }
-element normal.active { text-color: @accent; background-color: #161616; }
+element normal.active { text-color: @accent; background-color: @bg-low; }
 element selected.active { background-color: @bg-alt; text-color: @accent; }
 element normal.urgent { text-color: @urgent; }
 element selected      { background-color: @bg-alt; text-color: @accent; }

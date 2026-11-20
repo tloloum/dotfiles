@@ -6,7 +6,14 @@ l'icône + le nom de l'application active (sa classe X11), pas le titre de la fe
 Workspace vide → rien.
 """
 import json
+import os
 import subprocess
+import sys
+
+sys.path.insert(0, os.path.expanduser("~/.config/theme"))
+from palette import C  # noqa: E402  (palette du rice)
+
+DIM = C["fg_dim"]
 
 ICON_DEFAULT = "󰣆"
 APPS = {  # classe (minuscules) → (icône, nom affiché)
@@ -35,7 +42,7 @@ def label(wm_class):
     if not wm_class:
         return ""
     icon, name = APPS.get(wm_class.lower(), (ICON_DEFAULT, wm_class))
-    return f"%{{F#6e6e6e}}{icon}%{{F-}}  {name}"
+    return f"%{{F{DIM}}}{icon}%{{F-}}  {name}"
 
 
 def main():

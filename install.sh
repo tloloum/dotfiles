@@ -326,7 +326,7 @@ init_submodules() {
 # une arbo $HOME), les notes à la racine, et 'chrome' (Firefox, géré à part par
 # deploy_firefox car le nom de profil est aléatoire → pas stowable).
 STOW_PACKAGES=(
-  alacritty autostart dunst eww flameshot i3 i3status neofetch nvim polybar ranger rofi script vim xdg zsh
+  alacritty autostart dunst eww flameshot i3 i3status neofetch nvim polybar ranger rofi script theme vim xdg zsh
 )
 
 run_stow() {

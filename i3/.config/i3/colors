@@ -1,0 +1,8 @@
+# généré par ~/.config/theme/apply depuis colors.json — ne pas éditer
+# border/bg/text = tabs · indicator/child_border = window borders
+# class                 border  bg      text    indicator child_border
+client.focused          #2a2a2a #1e1e1e #e6e6e6 #8ABEB7   #F0C674
+client.focused_inactive #161616 #161616 #bdbdbd #373B41   #373B41
+client.unfocused        #0b0b0b #0b0b0b #6e6e6e #373B41   #373B41
+client.urgent           #c4605a #c4605a #0b0b0b #c4605a   #c4605a
+client.background       #0b0b0b

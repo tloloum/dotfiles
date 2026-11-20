@@ -3,10 +3,15 @@
 Thème : ~/.config/rofi/bar-menu.rasi (ancré sous les icônes réseau de polybar).
 """
 import html
+import os
 import subprocess
+import sys
+
+sys.path.insert(0, os.path.expanduser("~/.config/theme"))
+from palette import C  # noqa: E402  (palette du rice : ~/.config/theme/colors.json)
 
 THEME = "bar-menu"
-DIM = "#6e6e6e"  # = fg-dim du thème
+DIM = C["fg_dim"]
 KEY_FORGET = "Alt+d"
 FORGET = 10  # code de sortie de rofi pour -kb-custom-1
 
