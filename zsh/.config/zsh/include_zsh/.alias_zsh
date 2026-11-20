@@ -7,14 +7,14 @@ alias srczsh='source ~/.config/zsh/.zshrc'
 alias home='cd ~'
 alias create_swap='./.config/script/create_swapon.sh'
 alias vf='nvim $(fzf)'
-alias para='/home/tof/dev/ttk-paraview/build/bin/paraview'
-alias pvpy='/home/tof/dev/ttk-paraview/build/bin/pvpython'
+alias para='~/dev/ttk-paraview/build/bin/paraview'
+alias pvpy='~/dev/ttk-paraview/build/bin/pvpython'
 alias dev='cd ~/dev'
 alias ttk='cd ~/dev/ttk-loloum/'
 alias v='nvim'
 alias vim='nvim'
 # ParaView 6.2 (binaire MPI) avec Catalyst, isolé des variables du build ttk-paraview 6.1
-PV62_DIR='/home/tof/dev/bin_paraview/ParaView-6.2.0-RC2-MPI-Linux-Python3.12-x86_64'
+PV62_DIR="$HOME/dev/bin_paraview/ParaView-6.2.0-RC2-MPI-Linux-Python3.12-x86_64"
 alias pvcat="env -u PYTHONPATH -u LD_LIBRARY_PATH -u PV_PLUGIN_PATH CATALYST_IMPLEMENTATION_PATHS=$PV62_DIR/lib/catalyst CATALYST_IMPLEMENTATION_NAME=paraview $PV62_DIR/bin/pvpython"
 alias pvbatchcat="env -u PYTHONPATH -u LD_LIBRARY_PATH -u PV_PLUGIN_PATH CATALYST_IMPLEMENTATION_PATHS=$PV62_DIR/lib/catalyst CATALYST_IMPLEMENTATION_NAME=paraview $PV62_DIR/bin/pvbatch"
 alias paracat="env -u PYTHONPATH -u LD_LIBRARY_PATH -u PV_PLUGIN_PATH $PV62_DIR/bin/paraview"
