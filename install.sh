@@ -39,6 +39,8 @@ APT_PACKAGES=(
   # environnement graphique i3
   i3 i3status i3lock picom feh network-manager-gnome polybar pavucontrol
   rofi libnotify-bin
+  # popup média de polybar : eww (compilé, voir install_eww) + lecteur/visualiseur
+  playerctl cava libgtk-3-dev libdbusmenu-gtk3-dev libpango1.0-dev libgdk-pixbuf-2.0-dev
   pulseaudio-utils brightnessctl suckless-tools
   # terminal & fetch
   # (le paquet alacritty est gardé pour son .desktop/ses icônes, mais
@@ -163,6 +165,27 @@ install_alacritty_terminfo() {
     warn "Téléchargement de la terminfo alacritty échoué — installe-la à la main."
   fi
   rm -rf "$tmp"
+}
+
+# ── eww (popup média de polybar) ─────────────────────────────────────────────
+# Pas dans apt : compilé depuis les sources (version figée, X11 seulement) puis
+# placé dans ~/.local/bin. -j 2 pour ne pas saturer la RAM sur les petites machines.
+EWW_VERSION="v0.6.0"
+install_eww() {
+  command -v cargo >/dev/null 2>&1 || { warn "cargo absent — eww non installé (le popup média ne s'ouvrira pas)."; return; }
+  local SRC_DIR="$HOME/.local/src/eww"
+  if [ -d "$SRC_DIR" ]; then
+    git -C "$SRC_DIR" fetch --tags -q
+  else
+    git clone -q https://github.com/elkowar/eww.git "$SRC_DIR" || { warn "Échec clonage eww."; return; }
+  fi
+  git -C "$SRC_DIR" checkout -q "$EWW_VERSION"
+  log "Compilation d'eww $EWW_VERSION (plusieurs minutes)…"
+  if (cd "$SRC_DIR" && cargo build --release --no-default-features --features x11 -j 2); then
+    install -m 755 "$SRC_DIR/target/release/eww" "$HOME/.local/bin/eww"
+  else
+    warn "Échec compilation eww — vérifie les paquets libgtk-3-dev / libdbusmenu-gtk3-dev."
+  fi
 }
 
 # ── alacritty compilé depuis les sources ─────────────────────────────────────
@@ -303,7 +326,7 @@ init_submodules() {
 # une arbo $HOME), les notes à la racine, et 'chrome' (Firefox, géré à part par
 # deploy_firefox car le nom de profil est aléatoire → pas stowable).
 STOW_PACKAGES=(
-  alacritty autostart i3 i3status neofetch nvim polybar ranger rofi script vim xdg zsh
+  alacritty autostart eww i3 i3status neofetch nvim polybar ranger rofi script vim xdg zsh
 )
 
 run_stow() {
@@ -402,6 +425,7 @@ if [ "$DO_APT" -eq 1 ]; then
   install_fonts
   install_alacritty_terminfo
   install_alacritty_from_source
+  install_eww
 fi
 init_submodules
 install_zsh_stack

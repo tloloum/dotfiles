@@ -1,0 +1,83 @@
+// Thème du popup média — mêmes couleurs que polybar ([colors]) et rofi (noir.rasi)
+$bg: #0b0b0b;
+$bg-alt: #1e1e1e;
+$fg: #bdbdbd;
+$dim: #6e6e6e;
+$accent: #e6e6e6;
+$alert: #c4605a;
+
+* {
+  all: unset;
+  font-family: "CaskaydiaCove Nerd Font";
+  font-size: 13px;
+}
+
+.media {
+  background-color: rgba(11, 11, 11, 0.96);
+  border: 1px solid $bg-alt;
+  padding: 16px;
+  color: $fg;
+}
+
+// ── lecteur
+.art {
+  min-width: 88px;
+  min-height: 88px;
+  border-radius: 4px;
+  background-color: $bg-alt;
+  background-size: cover;
+  background-position: center;
+}
+.art-fallback { font-size: 36px; color: $dim; }
+.source { color: $dim; font-size: 11px; }
+.title { color: $accent; font-weight: bold; font-size: 14px; }
+.artist { color: $fg; }
+.controls { margin-top: 6px; }
+.ctl { font-size: 18px; color: $fg; }
+.ctl:hover { color: $accent; }
+.ctl.play { font-size: 22px; color: $accent; }
+
+// ── visualiseur
+.viz {
+  font-family: "CaskaydiaCove Nerd Font Mono";
+  font-size: 18px;
+  color: $dim;
+}
+
+// ── volume
+.mute { font-size: 16px; color: $fg; }
+.mute:hover { color: $accent; }
+.mute.on { color: $alert; }
+.pct { color: $dim; min-width: 38px; }
+scale trough {
+  min-height: 4px;
+  border-radius: 2px;
+  background-color: $bg-alt;
+}
+scale highlight {
+  border-radius: 2px;
+  background-color: $accent;
+}
+scale slider {
+  min-width: 12px;
+  min-height: 12px;
+  margin: -4px 0;
+  border-radius: 6px;
+  background-color: $accent;
+}
+
+// ── sortie son / micro
+.dev {
+  padding: 7px 10px;
+  border-radius: 4px;
+  background-color: $bg-alt;
+}
+.dev:hover, .dev.open { color: $accent; }
+.dev-icon { font-size: 15px; }
+.dev-icon.muted { color: $alert; }
+.devlist { margin-top: 2px; }
+.devitem { padding: 6px 10px; border-radius: 4px; }
+.devitem:hover { background-color: $bg-alt; }
+.devitem.current { color: $accent; }
+// Mono : la coche et l'espace des appareils non actifs ont la même largeur → noms alignés
+.devitem label { font-family: "CaskaydiaCove Nerd Font Mono"; }

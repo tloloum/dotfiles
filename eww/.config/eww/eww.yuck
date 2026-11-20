@@ -1,0 +1,91 @@
+;; Popup média ouvert depuis l'icône de son de polybar (scripts/toggle-media.sh)
+;; Lecteur en cours (playerctl) · visualiseur (cava) · volume · sortie son · micro
+
+(deflisten player
+  :initial '{"present":false,"source":"","title":"","artist":"","status":"","art":"","instance":"","can_prev":false,"can_next":false,"can_play":false}'
+  "python3 -u ~/.config/eww/scripts/player.py")
+
+(deflisten audio
+  :initial '{"volume":0,"muted":false,"sink":"","sinks":[],"source":"","mic_muted":false,"sources":[]}'
+  "python3 -u ~/.config/eww/scripts/audio.py")
+
+(deflisten bars :initial "" "~/.config/eww/scripts/visualizer.sh")
+
+(defvar show_sinks false)
+(defvar show_sources false)
+
+(defwindow media
+  ;; ancre en haut à droite : x négatif = vers la gauche (≈ sous l'icône de son)
+  :monitor 0
+  :geometry (geometry :x "-200px" :y "38px" :width "400px" :anchor "top right")
+  :stacking "fg"
+  :wm-ignore true
+  (box :class "media" :orientation "v" :space-evenly false :spacing 14
+    (now-playing)
+    (label :class "viz" :text bars)
+    (volume-row)
+    (devices)))
+
+;; ── lecteur ──────────────────────────────────────────────────────────────
+(defwidget now-playing []
+  (box :class "now" :space-evenly false :spacing 14
+    (box :class "art"
+         :style {player.art != "" ? "background-image: url('${player.art}');" : ""}
+      (label :class "art-fallback" :visible {player.art == ""} :text "󰝚"))
+    (box :orientation "v" :space-evenly false :valign "center" :hexpand true :spacing 2
+      (label :class "source" :halign "start"
+             :text {player.source != "" ? player.source : "Nothing playing"})
+      (label :class "title" :halign "start" :limit-width 30 :visible {player.title != ""}
+             :text {player.title})
+      (label :class "artist" :halign "start" :limit-width 34 :visible {player.artist != ""}
+             :text {player.artist})
+      (box :class "controls" :halign "start" :space-evenly false :spacing 20
+           :visible {player.present}
+        (button :class "ctl" :visible {player.can_prev}
+                :onclick "playerctl -p '${player.instance}' previous" "󰒮")
+        (button :class "ctl play" :visible {player.can_play}
+                :onclick "playerctl -p '${player.instance}' play-pause"
+                {player.status == "Playing" ? "󰏤" : "󰐊"})
+        (button :class "ctl" :visible {player.can_next}
+                :onclick "playerctl -p '${player.instance}' next" "󰒭")))))
+
+;; ── volume ───────────────────────────────────────────────────────────────
+(defwidget volume-row []
+  (box :class "volume" :space-evenly false :spacing 12
+    (button :class {audio.muted ? "mute on" : "mute"}
+            :onclick "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+            {audio.muted ? "󰖁" : "󰕾"})
+    (scale :class "vol" :hexpand true :min 0 :max 101 :round-digits 0
+           :value {audio.volume}
+           :onchange "pactl set-sink-volume @DEFAULT_SINK@ {}%")
+    (label :class "pct" :text "${audio.volume}%")))
+
+;; ── sortie son / micro ───────────────────────────────────────────────────
+(defwidget devices []
+  (box :orientation "v" :space-evenly false :spacing 6
+    (box :space-evenly true :spacing 8
+      (button :class {show_sinks ? "dev open" : "dev"}
+              :onclick "eww update show_sinks=${!show_sinks} show_sources=false"
+        (box :space-evenly false :spacing 8
+          (label :class "dev-icon" :text "󰓃")
+          (label :limit-width 16 :text {audio.sink})))
+      ;; clic : choisir le micro · clic droit : couper/rétablir le micro
+      (button :class {show_sources ? "dev open" : "dev"}
+              :onclick "eww update show_sources=${!show_sources} show_sinks=false"
+              :onrightclick "pactl set-source-mute @DEFAULT_SOURCE@ toggle"
+        (box :space-evenly false :spacing 8
+          (label :class {audio.mic_muted ? "dev-icon muted" : "dev-icon"}
+                 :text {audio.mic_muted ? "󰍭" : "󰍬"})
+          (label :limit-width 16 :text {audio.source}))))
+    (revealer :reveal show_sinks :transition "slidedown" :duration "150ms"
+      (box :class "devlist" :orientation "v"
+        (for s in {audio.sinks}
+          (button :class {s.default ? "devitem current" : "devitem"}
+                  :onclick "python3 ~/.config/eww/scripts/audio.py set-sink '${s.name}'; eww update show_sinks=false"
+            (label :halign "start" :text "${s.default ? '󰄬' : ' '}  ${s.desc}")))))
+    (revealer :reveal show_sources :transition "slidedown" :duration "150ms"
+      (box :class "devlist" :orientation "v"
+        (for s in {audio.sources}
+          (button :class {s.default ? "devitem current" : "devitem"}
+                  :onclick "python3 ~/.config/eww/scripts/audio.py set-source '${s.name}'; eww update show_sources=false"
+            (label :halign "start" :text "${s.default ? '󰄬' : ' '}  ${s.desc}")))))))
