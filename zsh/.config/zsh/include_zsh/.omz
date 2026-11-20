@@ -20,6 +20,8 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
+# terminal title (i3 tabs, Alt+Tab…): just the current directory, not user@host:dir
+ZSH_THEME_TERM_TITLE_IDLE="%~"
 
 [[ ! -f ${ZDOTDIR}/.p10k.zsh ]] || source ${ZDOTDIR}/.p10k.zsh
 

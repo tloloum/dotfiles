@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""$mod+z : met toutes les fenêtres du workspace en onglets (ou revient en côte à côte).
+
+Avec autotiling, chaque nouvelle fenêtre est rangée dans son propre conteneur :
+un simple `layout tabbed` ne met alors en onglets que ce conteneur (une seule
+fenêtre), et un second appui imbrique un groupe d'onglets dans un autre — d'où la
+barre « i3: T[…] » (onglet d'un conteneur). Ici :
+  - toutes les fenêtres tuilées du workspace rejoignent UN seul groupe d'onglets,
+    dans leur ordre à l'écran (haut→bas, gauche→droite) ;
+  - les conteneurs en onglets/empilés au-dessus repassent en split (plus de barre) ;
+  - si toutes les fenêtres sont déjà dans ce groupe d'onglets : retour en côte à côte.
+"""
+import json
+import subprocess
+
+MARK = "_tab_workspace"
+
+
+def i3(*commands):
+    return subprocess.run(["i3-msg", "; ".join(commands)], capture_output=True, text=True).stdout
+
+
+def find(node, pred, path=()):
+    """Premier nœud vérifiant pred, avec le chemin de ses ancêtres."""
+    if pred(node):
+        return node, path
+    for child in node.get("nodes", []) + node.get("floating_nodes", []):
+        found = find(child, pred, path + (node,))
+        if found:
+            return found
+    return None
+
+
+def tiled_windows(node):
+    if node.get("window"):
+        return [node]
+    result = []
+    for child in node.get("nodes", []):  # floating_nodes ignorés
+        result += tiled_windows(child)
+    return result
+
+
+def main():
+    tree = json.loads(i3_tree())
+    found = find(tree, lambda n: n.get("focused"))
+    if not found or not found[0].get("window"):
+        return
+    focused, path = found
+    parent = path[-1]
+    workspace = next((n for n in reversed(path) if n.get("type") == "workspace"), None)
+    if workspace is None:
+        return
+
+    windows = sorted(tiled_windows(workspace), key=lambda w: (w["rect"]["y"], w["rect"]["x"]))
+
+    # toutes les fenêtres déjà dans ce même groupe d'onglets → retour en côte à côte
+    siblings = {c["id"] for c in parent.get("nodes", [])}
+    if parent.get("layout") in ("tabbed", "stacked") and {w["id"] for w in windows} == siblings:
+        i3(f"[con_id={focused['id']}] layout splith")
+        return
+    if len(windows) < 2:
+        i3(f"[con_id={focused['id']}] layout tabbed")
+        return
+
+    # 1. les conteneurs onglets/empilés au-dessus de la 1re fenêtre repassent en split
+    anchor = windows[0]
+    _, anchor_path = find(workspace, lambda n: n["id"] == anchor["id"])
+    cmds = []
+    for container, child in zip(anchor_path, anchor_path[1:] + (anchor,)):
+        if container.get("type") == "con" and container.get("layout") in ("tabbed", "stacked"):
+            cmds.append(f"[con_id={child['id']}] layout splith")
+    # 2. la 1re fenêtre dans son propre conteneur, passé en onglets
+    cmds += [f"[con_id={anchor['id']}] split vertical",
+             f"[con_id={anchor['id']}] layout tabbed",
+             f"[con_id={anchor['id']}] mark {MARK}"]
+    # 3. les autres le rejoignent, dans l'ordre (le repère avance à chaque fenêtre)
+    for win in windows[1:]:
+        cmds += [f"[con_id={win['id']}] move container to mark {MARK}",
+                 f"[con_id={win['id']}] mark {MARK}"]
+    cmds += [f"unmark {MARK}", f"[con_id={focused['id']}] focus"]
+    i3(*cmds)
+
+
+def i3_tree():
+    return subprocess.run(["i3-msg", "-t", "get_tree"], capture_output=True, text=True).stdout
+
+
+if __name__ == "__main__":
+    main()
